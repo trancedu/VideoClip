@@ -22,6 +22,7 @@ class VideoPlayerApp(QWidget):
         self.current_clip_end = None
         self.main_video_position = 0  # Store the last position of the main video
         self.position_saved = False  # Flag to check if the position has been saved
+        self.loop_enabled = False  # Flag to check if looping is enabled
         
         # Create media player
         self.media_player = QMediaPlayer(None, QMediaPlayer.VideoSurface)
@@ -285,14 +286,21 @@ class VideoPlayerApp(QWidget):
                 
                 # Set the media to the main video and play from the start to end positions
                 self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(self.video_path)))
-                self.media_player.setPosition(int(clip_positions[0] * 1000))  # Convert to milliseconds
+                self.current_clip_start, self.current_clip_end = clip_positions  # Set the current clip start and end
+                self.media_player.setPosition(int(self.current_clip_start * 1000))  # Convert to milliseconds
                 self.media_player.play()
                 self.is_playing = True
                 self.return_button.setEnabled(True)
                 self.feedback_label.setText(f"Playing clip {selected_row + 1}")
                 
+                # Disconnect any existing connections to avoid recursion
+                try:
+                    self.media_player.positionChanged.disconnect(self.stop_at_end)
+                except TypeError:
+                    pass
+                
                 # Stop the video at the end position
-                self.media_player.positionChanged.connect(lambda pos: self.stop_at_end(pos, clip_positions[1]))
+                self.media_player.positionChanged.connect(lambda pos: self.stop_at_end(pos, self.current_clip_end))
             else:
                 self.feedback_label.setText("Main video file not found!")
         else:
@@ -300,9 +308,12 @@ class VideoPlayerApp(QWidget):
             
     def stop_at_end(self, current_position, end_position):
         if current_position >= int(end_position * 1000):  # Convert to milliseconds
-            self.media_player.pause()
-            self.feedback_label.setText("Clip playback finished.")
-            self.media_player.positionChanged.disconnect()  # Disconnect the signal to stop checking
+            if self.loop_enabled:
+                self.media_player.setPosition(int(self.current_clip_start * 1000))
+            else:
+                self.media_player.pause()
+                self.feedback_label.setText("Clip playback finished.")
+                self.media_player.positionChanged.disconnect(self.stop_at_end)  # Disconnect the signal to stop checking
             
     def return_to_main_video(self):
         if self.video_path:
@@ -324,13 +335,30 @@ class VideoPlayerApp(QWidget):
         else:
             self.feedback_label.setText("No clip selected to delete.")
     
+    def toggle_loop(self):
+        self.loop_enabled = not self.loop_enabled
+        status = "enabled" if self.loop_enabled else "disabled"
+        self.feedback_label.setText(f"Looping {status}")
+
+    def next_clip(self):
+        current_row = self.favorites_list.currentRow()
+        if current_row < self.favorites_list.count() - 1:
+            self.favorites_list.setCurrentRow(current_row + 1)
+            self.play_favorite()
+
+    def previous_clip(self):
+        current_row = self.favorites_list.currentRow()
+        if current_row > 0:
+            self.favorites_list.setCurrentRow(current_row - 1)
+            self.play_favorite()
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Delete:
             self.delete_clip()
         elif event.key() == Qt.Key_Right:
-            self.skip(5)
+            self.skip(3)  # Fine-tuned seeking
         elif event.key() == Qt.Key_Left:
-            self.skip(-5)
+            self.skip(-3)  # Fine-tuned seeking
         elif event.key() == Qt.Key_Space:
             if self.is_playing:
                 self.pause_video()
@@ -340,6 +368,12 @@ class VideoPlayerApp(QWidget):
             self.start_clip()
         elif event.key() == Qt.Key_E:
             self.save_clip()
+        elif event.key() == Qt.Key_L:
+            self.toggle_loop()
+        elif event.key() == Qt.Key_N:
+            self.next_clip()
+        elif event.key() == Qt.Key_P:
+            self.previous_clip()
     
     def slider_clicked(self):
         # Calculate the position based on the click
@@ -354,6 +388,12 @@ class CustomListWidget(QListWidget):
         # Propagate the event to the parent widget
         if event.key() in (Qt.Key_Space, Qt.Key_S, Qt.Key_E):
             self.parent().keyPressEvent(event)
+        elif event.key() == Qt.Key_L:
+            self.parent().toggle_loop()
+        elif event.key() == Qt.Key_N:
+            self.parent().next_clip()
+        elif event.key() == Qt.Key_P:
+            self.parent().previous_clip()
         else:
             super().keyPressEvent(event)
 
