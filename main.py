@@ -121,7 +121,7 @@ class VideoPlayerApp(QWidget):
                 
                 # Calculate the aspect ratio based on the video's resolution
                 video_width = 800
-                video_height = 600  # Default height in case metadata is not available
+                video_height = 450  # Default height in case metadata is not available
                 
                 # Check if metadata is available
                 if self.media_player.isMetaDataAvailable():
