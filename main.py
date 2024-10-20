@@ -23,6 +23,9 @@ class VideoPlayerApp(QWidget):
         self.video_widget = QVideoWidget()
         self.media_player.setVideoOutput(self.video_widget)
         
+        # Set aspect ratio mode
+        self.video_widget.setAspectRatioMode(Qt.KeepAspectRatio)
+        
         # Create widgets
         self.create_widgets()
         
