@@ -3,6 +3,8 @@ from tkinter import filedialog
 import threading
 from moviepy.editor import VideoFileClip
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QFileDialog, QLabel
+import time
+import cv2
 
 class VideoPlayerApp(QWidget):
     def __init__(self):
@@ -13,6 +15,7 @@ class VideoPlayerApp(QWidget):
         self.video_path = None
         self.video_clip = None
         self.is_playing = False
+        self.is_paused = False
         self.favorites = []
         self.current_clip_start = None
         self.current_clip_end = None
@@ -78,15 +81,34 @@ class VideoPlayerApp(QWidget):
     def play_video(self):
         if not self.is_playing and self.video_path:
             self.is_playing = True
+            self.is_paused = False
             threading.Thread(target=self.playback).start()
 
     def playback(self):
         if self.video_clip:
-            self.video_clip.preview()
-        self.is_playing = False
+            cap = cv2.VideoCapture(self.video_path)
+            while cap.isOpened():
+                if not self.is_playing:
+                    break
+                if self.is_paused:
+                    time.sleep(0.1)  # Wait while paused
+                    continue
+                
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                
+                cv2.imshow('Video', frame)
+                if cv2.waitKey(25) & 0xFF == ord('q'):  # Press 'q' to quit
+                    break
+            
+            cap.release()
+            cv2.destroyAllWindows()
+            self.is_playing = False
 
     def pause_video(self):
-        self.is_playing = False
+        if self.is_playing:  # Only pause if currently playing
+            self.is_paused = True
 
     def skip(self, seconds):
         if self.video_clip:
@@ -110,8 +132,13 @@ class VideoPlayerApp(QWidget):
     def play_favorite(self):
         selected_row = self.favorites_list.currentRow()  # Use currentRow instead of curselection
         if selected_row >= 0:
+            self.pause_video()  # Pause the current video
             clip = self.favorites[selected_row]
-            clip.preview()
+            threading.Thread(target=self.play_favorite_clip, args=(clip,)).start()  # Play in a separate thread
+
+    def play_favorite_clip(self, clip):
+        clip.preview()  # Play the favorite clip
+        self.is_playing = False  # Update the playing state after the clip finishes
 
 if __name__ == "__main__":
     app = QApplication([])
