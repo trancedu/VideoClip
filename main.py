@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog
 import threading
 from moviepy.editor import VideoFileClip
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QFileDialog
 
 class VideoPlayerApp(QWidget):
     def __init__(self):
@@ -65,7 +65,9 @@ class VideoPlayerApp(QWidget):
         self.setLayout(layout)
 
     def load_video(self):
-        self.video_path = filedialog.askopenfilename(filetypes=[("Video Files", "*.mp4 *.avi")])
+        options = QFileDialog.Options()
+        options |= QFileDialog.ReadOnly
+        self.video_path, _ = QFileDialog.getOpenFileName(self, "Open Video File", "", "Video Files (*.mp4 *.avi)", options=options)
         if self.video_path:
             self.video_clip = VideoFileClip(self.video_path)
 
