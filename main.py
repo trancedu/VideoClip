@@ -30,9 +30,11 @@ class VideoPlayerApp(QWidget):
         # Create widgets
         self.create_widgets()
         
+        # Timer for checking playback position
+        self.playback_timer = QTimer(self)
+        self.playback_timer.timeout.connect(self.check_playback_position)
+        
         # Connect media player signals
-        self.media_player.positionChanged.connect(self.update_position)
-        self.media_player.positionChanged.connect(self.check_loop_position)
         self.media_player.durationChanged.connect(self.update_duration)
         
         # Load a specific video if debug flag is set
@@ -210,6 +212,7 @@ class VideoPlayerApp(QWidget):
                 self.media_player.play()
                 self.is_playing = True
                 self.feedback_label.setText("Playing video")
+                self.playback_timer.start(50)  # Start the timer to check playback position every 50ms
             except Exception as e:
                 self.feedback_label.setText(f"Error playing video: {e}")
     
@@ -218,6 +221,7 @@ class VideoPlayerApp(QWidget):
             self.media_player.pause()
             self.is_playing = False
             self.feedback_label.setText("Video paused")
+            self.playback_timer.stop()  # Stop the timer when paused
             
     def skip(self, seconds):
         if self.media_player.duration() > 0:
@@ -288,6 +292,7 @@ class VideoPlayerApp(QWidget):
                 # Set the media to the main video and play from the start to end positions
                 self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(self.video_path)))
                 self.current_clip_start, self.current_clip_end = clip_positions  # Set the current clip start and end
+                print(f"Playing clip from {self.current_clip_start} to {self.current_clip_end}")
                 self.media_player.setPosition(int(self.current_clip_start * 1000))  # Convert to milliseconds
                 self.media_player.play()
                 self.is_playing = True
@@ -298,14 +303,17 @@ class VideoPlayerApp(QWidget):
         else:
             self.feedback_label.setText("No clip selected.")
             
-    def check_loop_position(self, current_position):
+    def check_playback_position(self):
+        current_position = self.media_player.position()
+        self.update_position(current_position)  # Update the progress bar less frequently if needed
         if self.current_clip_end is not None:  # Ensure current_clip_end is set
+            #print(f"Current position: {current_position}, End position: {int(self.current_clip_end * 1000)}")
             if current_position >= int(self.current_clip_end * 1000):  # Convert to milliseconds
                 if self.loop_enabled:
                     # Apply an additional 500ms buffer when looping
                     adjusted_start = max(0, self.current_clip_start * 1000 - 500)
+                    #print(f"Looping from {self.current_clip_start} to {adjusted_start}")
                     self.media_player.setPosition(int(adjusted_start))
-                    self.media_player.play()
                 else:
                     self.media_player.pause()
                     self.feedback_label.setText("Clip playback finished.")
