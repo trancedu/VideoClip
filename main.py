@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 
 class VideoPlayerApp(QWidget):
-    def __init__(self):
+    def __init__(self, debug=False, debug_video_path=None):
         super().__init__()
         self.setWindowTitle("English Listening Practice")
         
@@ -29,6 +29,22 @@ class VideoPlayerApp(QWidget):
         # Connect media player signals
         self.media_player.positionChanged.connect(self.update_position)
         self.media_player.durationChanged.connect(self.update_duration)
+        
+        # Load a specific video if debug flag is set
+        if debug and debug_video_path:
+            self.video_path = debug_video_path
+            if os.path.exists(self.video_path):
+                self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(self.video_path)))
+                self.play_button.setEnabled(True)
+                self.pause_button.setEnabled(True)
+                self.forward_button.setEnabled(True)
+                self.backward_button.setEnabled(True)
+                self.clip_button.setEnabled(True)
+                self.save_clip_button.setEnabled(True)
+                self.feedback_label.setText(f"Loaded video: {os.path.basename(self.video_path)}")
+                self.play_video()  # Automatically play the video after loading
+            else:
+                self.feedback_label.setText("Debug video file not found.")
         
     def create_widgets(self):
         layout = QVBoxLayout()
@@ -235,7 +251,10 @@ class VideoPlayerApp(QWidget):
             self.feedback_label.setText("Returned to main video")
         
 if __name__ == "__main__":
+    debug_mode = True  # Set this to True to enable debug mode
+    debug_video_path = "/Users/trance/Movies/S04.1080p.中英字幕/Fresh.Off.the.Boat.S04E03.1080p.AMZN.WEB.mp4"
+    
     app = QApplication(sys.argv)
-    window = VideoPlayerApp()
+    window = VideoPlayerApp(debug=debug_mode, debug_video_path=debug_video_path)
     window.show()
     sys.exit(app.exec_())
