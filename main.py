@@ -2,7 +2,7 @@ import sys
 import os
 import tempfile
 import json
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QFileDialog, QLabel, QSlider, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QFileDialog, QLabel, QSlider, QHBoxLayout, QToolTip
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtMultimediaWidgets import QVideoWidget
@@ -45,13 +45,27 @@ class VideoPlayerApp(QWidget):
         video_layout = QVBoxLayout()
         self.video_widget = ClickableVideoWidget(self)  # Use the custom video widget
         self.media_player.setVideoOutput(self.video_widget)
-        video_layout.addWidget(self.video_widget)
+        video_layout.addWidget(self.video_widget, stretch=1)  # Allow video to expand
+        
+        # Progress bar and duration label layout
+        progress_layout = QHBoxLayout()
         
         # Progress bar
         self.position_slider = QSlider(Qt.Horizontal)
         self.position_slider.setRange(0, 0)
         self.position_slider.sliderMoved.connect(self.set_position)
-        video_layout.addWidget(self.position_slider)
+        self.position_slider.setToolTip("0:00")  # Initial tooltip
+        self.position_slider.setMouseTracking(True)
+        self.position_slider.installEventFilter(self)
+        self.position_slider.setFixedHeight(20)  # Set a fixed height for the slider
+        progress_layout.addWidget(self.position_slider)
+        
+        # Video duration label
+        self.duration_label = QLabel("0:00 / 0:00")
+        progress_layout.addWidget(self.duration_label)
+        
+        # Add progress layout to video layout
+        video_layout.addLayout(progress_layout)
         
         # Add video layout to main layout
         main_layout.addLayout(video_layout, 7)  # 7/8 of the width
@@ -133,13 +147,33 @@ class VideoPlayerApp(QWidget):
 
     def update_position(self, position):
         self.position_slider.setValue(position)
+        current_time = self.format_time(position)
+        total_time = self.format_time(self.media_player.duration())
+        self.duration_label.setText(f"{current_time} / {total_time}")
         
     def update_duration(self, duration):
         self.position_slider.setRange(0, duration)
+        total_time = self.format_time(duration)
+        current_time = self.format_time(self.media_player.position())
+        self.duration_label.setText(f"{current_time} / {total_time}")
         
     def set_position(self, position):
         self.media_player.setPosition(position)
         
+    def format_time(self, ms):
+        seconds = ms // 1000
+        minutes = seconds // 60
+        seconds = seconds % 60
+        return f"{minutes}:{seconds:02}"
+    
+    def eventFilter(self, source, event):
+        if source is self.position_slider and event.type() == event.MouseMove:
+            pos = event.pos().x()
+            value = self.position_slider.minimum() + (self.position_slider.maximum() - self.position_slider.minimum()) * pos / self.position_slider.width()
+            tooltip_time = self.format_time(int(value))
+            QToolTip.showText(event.globalPos(), tooltip_time, self.position_slider)
+        return super().eventFilter(source, event)
+    
     def load_video(self, video_path=None):
         if video_path and os.path.exists(video_path):
             self.video_path = video_path
