@@ -87,6 +87,7 @@ class VideoPlayerApp(QWidget):
         
         # Favorites
         self.favorites_list = QListWidget()
+        self.favorites_list.itemDoubleClicked.connect(self.play_favorite)  # Connect double-click signal
         layout.addWidget(self.favorites_list)
         
         self.play_favorite_button = QPushButton("Play Favorite")
