@@ -12,6 +12,7 @@ class VideoPlayerApp(QWidget):
         super().__init__()
         self.setWindowTitle("English Listening Practice")
         self.resize(1800, 1200)  # Set the window size to 1800x1200
+        self.setFocusPolicy(Qt.StrongFocus)  # Ensure the window can capture key events
         
         # Initialize variables
         self.video_path = None
@@ -100,7 +101,7 @@ class VideoPlayerApp(QWidget):
         control_layout.addWidget(self.feedback_label)
         
         # Favorites
-        self.favorites_list = QListWidget()
+        self.favorites_list = CustomListWidget(self)  # Use the custom list widget
         self.favorites_list.itemDoubleClicked.connect(self.play_favorite)  # Connect double-click signal
         control_layout.addWidget(self.favorites_list)
         
@@ -289,7 +290,27 @@ class VideoPlayerApp(QWidget):
             self.skip(5)
         elif event.key() == Qt.Key_Left:
             self.skip(-5)
-    
+        elif event.key() == Qt.Key_Space:
+            if self.is_playing:
+                self.pause_video()
+            else:
+                self.play_video()
+        elif event.key() == Qt.Key_S:
+            self.start_clip()
+        elif event.key() == Qt.Key_E:
+            self.save_clip()
+
+class CustomListWidget(QListWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def keyPressEvent(self, event):
+        # Propagate the event to the parent widget
+        if event.key() in (Qt.Key_Space, Qt.Key_S, Qt.Key_E):
+            self.parent().keyPressEvent(event)
+        else:
+            super().keyPressEvent(event)
+
 if __name__ == "__main__":
     debug_mode = True  # Set this to True to enable debug mode
     debug_video_path = "/Users/trance/Movies/S04.1080p.中英字幕/Fresh.Off.the.Boat.S04E03.1080p.AMZN.WEB.mp4"
