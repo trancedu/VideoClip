@@ -1,6 +1,7 @@
 import sys
 import os
 import tempfile
+import json
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QFileDialog, QLabel, QSlider
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtCore import Qt, QUrl
@@ -32,19 +33,7 @@ class VideoPlayerApp(QWidget):
         
         # Load a specific video if debug flag is set
         if debug and debug_video_path:
-            self.video_path = debug_video_path
-            if os.path.exists(self.video_path):
-                self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(self.video_path)))
-                self.play_button.setEnabled(True)
-                self.pause_button.setEnabled(True)
-                self.forward_button.setEnabled(True)
-                self.backward_button.setEnabled(True)
-                self.clip_button.setEnabled(True)
-                self.save_clip_button.setEnabled(True)
-                self.feedback_label.setText(f"Loaded video: {os.path.basename(self.video_path)}")
-                self.play_video()  # Automatically play the video after loading
-            else:
-                self.feedback_label.setText("Debug video file not found.")
+            self.load_video(video_path=debug_video_path)
         
     def create_widgets(self):
         layout = QVBoxLayout()
@@ -121,12 +110,16 @@ class VideoPlayerApp(QWidget):
     def set_position(self, position):
         self.media_player.setPosition(position)
         
-    def load_video(self):
-        options = QFileDialog.Options()
-        options |= QFileDialog.ReadOnly
-        self.video_path, _ = QFileDialog.getOpenFileName(
-            self, "Open Video File", "", "Video Files (*.mp4 *.avi)", options=options)
-        if self.video_path:
+    def load_video(self, video_path=None):
+        if video_path and os.path.exists(video_path):
+            self.video_path = video_path
+        else:
+            options = QFileDialog.Options()
+            options |= QFileDialog.ReadOnly
+            self.video_path, _ = QFileDialog.getOpenFileName(
+                self, "Open Video File", "", "Video Files (*.mp4 *.avi)", options=options)
+        
+        if self.video_path and os.path.exists(self.video_path):
             self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(self.video_path)))
             self.play_button.setEnabled(True)
             self.pause_button.setEnabled(True)
@@ -135,8 +128,15 @@ class VideoPlayerApp(QWidget):
             self.clip_button.setEnabled(True)
             self.save_clip_button.setEnabled(True)
             self.feedback_label.setText(f"Loaded video: {os.path.basename(self.video_path)}")
-            self.play_video()  # Automatically play the video after loading
             
+            # Load saved clip positions
+            self.load_clips_from_file()
+            
+            # Automatically play the video after loading
+            self.play_video()
+        else:
+            self.feedback_label.setText("Video file not found.")
+    
     def play_video(self):
         if self.video_path:
             try:
@@ -202,11 +202,39 @@ class VideoPlayerApp(QWidget):
                 self.favorites.append(clip_positions)
                 self.favorites_list.addItem(f"Clip {len(self.favorites)}: {self.current_clip_start:.2f}s - {self.current_clip_end:.2f}s")
                 self.feedback_label.setText("Clip positions saved!")
+
+                # Save to JSON file
+                self.save_clips_to_file()
             else:
                 self.feedback_label.setText("Invalid clip duration.")
         else:
             self.feedback_label.setText("Set the clip start point first.")
             
+    def save_clips_to_file(self):
+        if self.video_path:
+            config_dir = os.path.join(os.path.dirname(self.video_path), "config")
+            os.makedirs(config_dir, exist_ok=True)
+            config_file = os.path.join(config_dir, f"{os.path.basename(self.video_path)}.json")
+            
+            with open(config_file, 'w') as f:
+                json.dump(self.favorites, f)
+            self.feedback_label.setText("Clip positions saved to file.")
+            
+    def load_clips_from_file(self):
+        if self.video_path:
+            config_dir = os.path.join(os.path.dirname(self.video_path), "config")
+            config_file = os.path.join(config_dir, f"{os.path.basename(self.video_path)}.json")
+            
+            if os.path.exists(config_file):
+                with open(config_file, 'r') as f:
+                    self.favorites = json.load(f)
+                self.favorites_list.clear()
+                for i, (start, end) in enumerate(self.favorites):
+                    self.favorites_list.addItem(f"Clip {i + 1}: {start:.2f}s - {end:.2f}s")
+                self.feedback_label.setText("Clip positions loaded from file.")
+            else:
+                self.feedback_label.setText("No saved clip positions found.")
+                
     def play_favorite(self):
         selected_row = self.favorites_list.currentRow()
         if selected_row >= 0:
