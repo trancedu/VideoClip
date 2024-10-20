@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog
 import threading
 from moviepy.editor import VideoFileClip
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QFileDialog
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QFileDialog, QLabel
 
 class VideoPlayerApp(QWidget):
     def __init__(self):
@@ -54,6 +54,10 @@ class VideoPlayerApp(QWidget):
         self.save_clip_button.clicked.connect(self.save_clip)
         layout.addWidget(self.save_clip_button)
 
+        # Feedback label
+        self.feedback_label = QLabel("")
+        layout.addWidget(self.feedback_label)
+
         # Favorites
         self.favorites_list = QListWidget()
         layout.addWidget(self.favorites_list)
@@ -89,23 +93,24 @@ class VideoPlayerApp(QWidget):
             current_time = self.video_clip.reader.pos / self.video_clip.fps
             new_time = current_time + seconds
             if new_time > 0:
-                self.video_clip.reader.seek(new_time)
+                self.video_clip.set_duration(new_time)
 
     def start_clip(self):
         if self.video_clip:
             self.current_clip_start = self.video_clip.reader.pos / self.video_clip.fps
+            self.feedback_label.setText("Clip has started!")  # Feedback for starting a clip
 
     def save_clip(self):
         if self.video_clip and self.current_clip_start is not None:
             self.current_clip_end = self.video_clip.reader.pos / self.video_clip.fps
             clip = self.video_clip.subclip(self.current_clip_start, self.current_clip_end)
             self.favorites.append(clip)
-            self.favorites_list.insert(tk.END, f"Clip {len(self.favorites)}")
+            self.favorites_list.addItem(f"Clip {len(self.favorites)}")
 
     def play_favorite(self):
-        selected = self.favorites_list.curselection()
-        if selected:
-            clip = self.favorites[selected[0]]
+        selected_row = self.favorites_list.currentRow()  # Use currentRow instead of curselection
+        if selected_row >= 0:
+            clip = self.favorites[selected_row]
             clip.preview()
 
 if __name__ == "__main__":
