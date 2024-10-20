@@ -54,6 +54,7 @@ class VideoPlayerApp(QWidget):
         self.position_slider = QSlider(Qt.Horizontal)
         self.position_slider.setRange(0, 0)
         self.position_slider.sliderMoved.connect(self.set_position)
+        self.position_slider.sliderPressed.connect(self.slider_clicked)  # Connect slider click
         self.position_slider.setToolTip("0:00")  # Initial tooltip
         self.position_slider.setMouseTracking(True)
         self.position_slider.installEventFilter(self)
@@ -339,6 +340,11 @@ class VideoPlayerApp(QWidget):
             self.start_clip()
         elif event.key() == Qt.Key_E:
             self.save_clip()
+    
+    def slider_clicked(self):
+        # Calculate the position based on the click
+        value = self.position_slider.value()
+        self.set_position(value)
 
 class CustomListWidget(QListWidget):
     def __init__(self, parent=None):
