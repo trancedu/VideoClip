@@ -197,23 +197,11 @@ class VideoPlayerApp(QWidget):
         if self.current_clip_start is not None:
             self.current_clip_end = self.media_player.position() / 1000.0  # seconds
             if self.current_clip_end > self.current_clip_start:
-                # Use moviepy to extract the clip
-                from moviepy.editor import VideoFileClip
-                clip = VideoFileClip(self.video_path).subclip(self.current_clip_start, self.current_clip_end)
-                # Save clip to temporary file
-                temp_dir = tempfile.gettempdir()
-                clip_filename = f"clip_{len(self.favorites)}.mp4"
-                temp_file_path = os.path.join(temp_dir, clip_filename)
-                self.feedback_label.setText("Saving clip, please wait...")
-                QApplication.processEvents()  # Update UI
-                
-                try:
-                    clip.write_videofile(temp_file_path, codec='libx264', audio_codec='aac', remove_temp=True, logger=None)
-                    self.favorites.append(temp_file_path)
-                    self.favorites_list.addItem(f"Clip {len(self.favorites)}")
-                    self.feedback_label.setText("Clip saved!")
-                except Exception as e:
-                    self.feedback_label.setText(f"Error saving clip: {e}")
+                # Save the start and end positions as a tuple
+                clip_positions = (self.current_clip_start, self.current_clip_end)
+                self.favorites.append(clip_positions)
+                self.favorites_list.addItem(f"Clip {len(self.favorites)}: {self.current_clip_start:.2f}s - {self.current_clip_end:.2f}s")
+                self.feedback_label.setText("Clip positions saved!")
             else:
                 self.feedback_label.setText("Invalid clip duration.")
         else:
@@ -222,23 +210,33 @@ class VideoPlayerApp(QWidget):
     def play_favorite(self):
         selected_row = self.favorites_list.currentRow()
         if selected_row >= 0:
-            clip_path = self.favorites[selected_row]
-            if os.path.exists(clip_path):
+            clip_positions = self.favorites[selected_row]
+            if self.video_path:
                 # Save the current position of the main video only if not already saved
                 if not self.position_saved:
                     self.main_video_position = self.media_player.position()
                     self.position_saved = True
                 
-                # Load the clip into media player
-                self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(clip_path)))
+                # Set the media to the main video and play from the start to end positions
+                self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(self.video_path)))
+                self.media_player.setPosition(int(clip_positions[0] * 1000))  # Convert to milliseconds
                 self.media_player.play()
                 self.is_playing = True
                 self.return_button.setEnabled(True)
                 self.feedback_label.setText(f"Playing clip {selected_row + 1}")
+                
+                # Stop the video at the end position
+                self.media_player.positionChanged.connect(lambda pos: self.stop_at_end(pos, clip_positions[1]))
             else:
-                self.feedback_label.setText("Clip file not found!")
+                self.feedback_label.setText("Main video file not found!")
         else:
             self.feedback_label.setText("No clip selected.")
+            
+    def stop_at_end(self, current_position, end_position):
+        if current_position >= int(end_position * 1000):  # Convert to milliseconds
+            self.media_player.pause()
+            self.feedback_label.setText("Clip playback finished.")
+            self.media_player.positionChanged.disconnect()  # Disconnect the signal to stop checking
             
     def return_to_main_video(self):
         if self.video_path:
