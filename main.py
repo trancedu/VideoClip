@@ -93,6 +93,11 @@ class VideoPlayerApp(QWidget):
         self.play_favorite_button.clicked.connect(self.play_favorite)
         layout.addWidget(self.play_favorite_button)
         
+        # Delete Clip Button
+        self.delete_clip_button = QPushButton("Delete Clip")
+        self.delete_clip_button.clicked.connect(self.delete_clip)
+        layout.addWidget(self.delete_clip_button)
+        
         # Return to Main Video Button
         self.return_button = QPushButton("Return to Main Video")
         self.return_button.clicked.connect(self.return_to_main_video)
@@ -276,6 +281,20 @@ class VideoPlayerApp(QWidget):
             self.position_saved = False  # Reset the flag
             self.feedback_label.setText("Returned to main video")
         
+    def delete_clip(self):
+        selected_row = self.favorites_list.currentRow()
+        if selected_row >= 0:
+            del self.favorites[selected_row]
+            self.favorites_list.takeItem(selected_row)
+            self.save_clips_to_file()
+            self.feedback_label.setText(f"Deleted clip {selected_row + 1}")
+        else:
+            self.feedback_label.setText("No clip selected to delete.")
+    
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Delete:
+            self.delete_clip()
+    
 if __name__ == "__main__":
     debug_mode = True  # Set this to True to enable debug mode
     debug_video_path = "/Users/trance/Movies/S04.1080p.中英字幕/Fresh.Off.the.Boat.S04E03.1080p.AMZN.WEB.mp4"
