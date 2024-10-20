@@ -43,7 +43,7 @@ class VideoPlayerApp(QWidget):
         
         # Video display area
         video_layout = QVBoxLayout()
-        self.video_widget = QVideoWidget()
+        self.video_widget = ClickableVideoWidget(self)  # Use the custom video widget
         self.media_player.setVideoOutput(self.video_widget)
         video_layout.addWidget(self.video_widget)
         
@@ -125,6 +125,12 @@ class VideoPlayerApp(QWidget):
         
         self.setLayout(main_layout)
         
+    def toggle_play_pause(self):
+        if self.is_playing:
+            self.pause_video()
+        else:
+            self.play_video()
+
     def update_position(self, position):
         self.position_slider.setValue(position)
         
@@ -310,6 +316,14 @@ class CustomListWidget(QListWidget):
             self.parent().keyPressEvent(event)
         else:
             super().keyPressEvent(event)
+
+class ClickableVideoWidget(QVideoWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def mousePressEvent(self, event):
+        # Call the toggle play/pause method in the parent
+        self.parent().toggle_play_pause()
 
 if __name__ == "__main__":
     debug_mode = True  # Set this to True to enable debug mode
