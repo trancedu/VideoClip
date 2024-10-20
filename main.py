@@ -100,10 +100,13 @@ class VideoPlayerApp(QWidget):
         
     def play_video(self):
         if self.video_path:
-            self.media_player.play()
-            self.is_playing = True
-            self.feedback_label.setText("Playing video")
-            
+            try:
+                self.media_player.play()
+                self.is_playing = True
+                self.feedback_label.setText("Playing video")
+            except Exception as e:
+                self.feedback_label.setText(f"Error playing video: {e}")
+                
     def pause_video(self):
         if self.is_playing:
             self.media_player.pause()
