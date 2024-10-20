@@ -119,7 +119,8 @@ class VideoPlayerApp(QWidget):
             self.clip_button.setEnabled(True)
             self.save_clip_button.setEnabled(True)
             self.feedback_label.setText(f"Loaded video: {os.path.basename(self.video_path)}")
-        
+            self.play_video()  # Automatically play the video after loading
+            
     def play_video(self):
         if self.video_path:
             try:
