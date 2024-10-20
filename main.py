@@ -1,7 +1,7 @@
 import sys
 import os
 import tempfile
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QFileDialog, QLabel
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QFileDialog, QLabel, QSlider
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtMultimediaWidgets import QVideoWidget
@@ -23,6 +23,10 @@ class VideoPlayerApp(QWidget):
         
         # Create widgets
         self.create_widgets()
+        
+        # Connect media player signals
+        self.media_player.positionChanged.connect(self.update_position)
+        self.media_player.durationChanged.connect(self.update_duration)
         
     def create_widgets(self):
         layout = QVBoxLayout()
@@ -53,6 +57,12 @@ class VideoPlayerApp(QWidget):
         self.backward_button.setEnabled(False)
         layout.addWidget(self.backward_button)
         
+        # Progress bar
+        self.position_slider = QSlider(Qt.Horizontal)
+        self.position_slider.setRange(0, 0)
+        self.position_slider.sliderMoved.connect(self.set_position)
+        layout.addWidget(self.position_slider)
+        
         # Clip controls
         self.clip_button = QPushButton("Start Clip")
         self.clip_button.clicked.connect(self.start_clip)
@@ -77,6 +87,15 @@ class VideoPlayerApp(QWidget):
         layout.addWidget(self.play_favorite_button)
         
         self.setLayout(layout)
+        
+    def update_position(self, position):
+        self.position_slider.setValue(position)
+        
+    def update_duration(self, duration):
+        self.position_slider.setRange(0, duration)
+        
+    def set_position(self, position):
+        self.media_player.setPosition(position)
         
     def load_video(self):
         options = QFileDialog.Options()
