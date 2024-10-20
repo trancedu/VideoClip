@@ -4,7 +4,7 @@ import tempfile
 import json
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QFileDialog, QLabel, QSlider, QHBoxLayout, QToolTip
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
-from PyQt5.QtCore import Qt, QUrl
+from PyQt5.QtCore import Qt, QUrl, QTimer
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 
 class VideoPlayerApp(QWidget):
@@ -23,7 +23,6 @@ class VideoPlayerApp(QWidget):
         self.main_video_position = 0  # Store the last position of the main video
         self.position_saved = False  # Flag to check if the position has been saved
         self.loop_enabled = False  # Flag to check if looping is enabled
-        self.stop_at_end_connection = None  # Store the connection to stop_at_end
         
         # Create media player
         self.media_player = QMediaPlayer(None, QMediaPlayer.VideoSurface)
@@ -33,6 +32,7 @@ class VideoPlayerApp(QWidget):
         
         # Connect media player signals
         self.media_player.positionChanged.connect(self.update_position)
+        self.media_player.positionChanged.connect(self.check_loop_position)
         self.media_player.durationChanged.connect(self.update_duration)
         
         # Load a specific video if debug flag is set
@@ -293,30 +293,23 @@ class VideoPlayerApp(QWidget):
                 self.is_playing = True
                 self.return_button.setEnabled(True)
                 self.feedback_label.setText(f"Playing clip {selected_row + 1}")
-                
-                # Disconnect any existing connections to avoid recursion
-                if self.stop_at_end_connection:
-                    self.media_player.positionChanged.disconnect(self.stop_at_end_connection)
-                
-                # Stop the video at the end position
-                self.stop_at_end_connection = lambda pos: self.stop_at_end(pos, self.current_clip_end)
-                self.media_player.positionChanged.connect(self.stop_at_end_connection)
             else:
                 self.feedback_label.setText("Main video file not found!")
         else:
             self.feedback_label.setText("No clip selected.")
             
-    def stop_at_end(self, current_position, end_position):
-        if current_position >= int(end_position * 1000):  # Convert to milliseconds
-            if self.loop_enabled:
-                self.media_player.setPosition(int(self.current_clip_start * 1000))
-            else:
-                self.media_player.pause()
-                self.feedback_label.setText("Clip playback finished.")
-                if self.stop_at_end_connection:
-                    self.media_player.positionChanged.disconnect(self.stop_at_end_connection)
-                    self.stop_at_end_connection = None
-            
+    def check_loop_position(self, current_position):
+        if self.current_clip_end is not None:  # Ensure current_clip_end is set
+            if current_position >= int(self.current_clip_end * 1000):  # Convert to milliseconds
+                if self.loop_enabled:
+                    # Apply an additional 500ms buffer when looping
+                    adjusted_start = max(0, self.current_clip_start * 1000 - 500)
+                    self.media_player.setPosition(int(adjusted_start))
+                    self.media_player.play()
+                else:
+                    self.media_player.pause()
+                    self.feedback_label.setText("Clip playback finished.")
+    
     def return_to_main_video(self):
         if self.video_path:
             self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(self.video_path)))
