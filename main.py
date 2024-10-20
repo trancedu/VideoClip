@@ -17,6 +17,8 @@ class VideoPlayerApp(QWidget):
         self.favorites = []
         self.current_clip_start = None
         self.current_clip_end = None
+        self.main_video_position = 0  # Store the last position of the main video
+        self.position_saved = False  # Flag to check if the position has been saved
         
         # Create media player
         self.media_player = QMediaPlayer(None, QMediaPlayer.VideoSurface)
@@ -85,6 +87,12 @@ class VideoPlayerApp(QWidget):
         self.play_favorite_button = QPushButton("Play Favorite")
         self.play_favorite_button.clicked.connect(self.play_favorite)
         layout.addWidget(self.play_favorite_button)
+        
+        # Return to Main Video Button
+        self.return_button = QPushButton("Return to Main Video")
+        self.return_button.clicked.connect(self.return_to_main_video)
+        self.return_button.setEnabled(False)
+        layout.addWidget(self.return_button)
         
         self.setLayout(layout)
         
@@ -199,16 +207,32 @@ class VideoPlayerApp(QWidget):
         if selected_row >= 0:
             clip_path = self.favorites[selected_row]
             if os.path.exists(clip_path):
+                # Save the current position of the main video only if not already saved
+                if not self.position_saved:
+                    self.main_video_position = self.media_player.position()
+                    self.position_saved = True
+                
                 # Load the clip into media player
                 self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(clip_path)))
                 self.media_player.play()
                 self.is_playing = True
+                self.return_button.setEnabled(True)
                 self.feedback_label.setText(f"Playing clip {selected_row + 1}")
             else:
                 self.feedback_label.setText("Clip file not found!")
         else:
             self.feedback_label.setText("No clip selected.")
             
+    def return_to_main_video(self):
+        if self.video_path:
+            self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(self.video_path)))
+            self.media_player.setPosition(self.main_video_position)  # Resume from last position
+            self.media_player.play()
+            self.is_playing = True
+            self.return_button.setEnabled(False)
+            self.position_saved = False  # Reset the flag
+            self.feedback_label.setText("Returned to main video")
+        
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = VideoPlayerApp()
