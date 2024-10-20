@@ -1,14 +1,13 @@
 import tkinter as tk
 from tkinter import filedialog
-import cv2
 import threading
-import time
 from moviepy.editor import VideoFileClip
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget
 
-class VideoPlayerApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("English Listening Practice")
+class VideoPlayerApp(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("English Listening Practice")
         
         # Initialize variables
         self.video_path = None
@@ -22,31 +21,48 @@ class VideoPlayerApp:
         self.create_widgets()
 
     def create_widgets(self):
+        layout = QVBoxLayout()
+
         # Load Video Button
-        self.load_button = tk.Button(self.root, text="Load Video", command=self.load_video)
-        self.load_button.pack()
+        self.load_button = QPushButton("Load Video")
+        self.load_button.clicked.connect(self.load_video)
+        layout.addWidget(self.load_button)
 
         # Video controls
-        self.play_button = tk.Button(self.root, text="Play", command=self.play_video)
-        self.play_button.pack()
-        self.pause_button = tk.Button(self.root, text="Pause", command=self.pause_video)
-        self.pause_button.pack()
-        self.forward_button = tk.Button(self.root, text="Forward 5s", command=lambda: self.skip(5))
-        self.forward_button.pack()
-        self.backward_button = tk.Button(self.root, text="Backward 5s", command=lambda: self.skip(-5))
-        self.backward_button.pack()
+        self.play_button = QPushButton("Play")
+        self.play_button.clicked.connect(self.play_video)
+        layout.addWidget(self.play_button)
+
+        self.pause_button = QPushButton("Pause")
+        self.pause_button.clicked.connect(self.pause_video)
+        layout.addWidget(self.pause_button)
+
+        self.forward_button = QPushButton("Forward 5s")
+        self.forward_button.clicked.connect(lambda: self.skip(5))
+        layout.addWidget(self.forward_button)
+
+        self.backward_button = QPushButton("Backward 5s")
+        self.backward_button.clicked.connect(lambda: self.skip(-5))
+        layout.addWidget(self.backward_button)
 
         # Clip controls
-        self.clip_button = tk.Button(self.root, text="Start Clip", command=self.start_clip)
-        self.clip_button.pack()
-        self.save_clip_button = tk.Button(self.root, text="Save Clip", command=self.save_clip)
-        self.save_clip_button.pack()
+        self.clip_button = QPushButton("Start Clip")
+        self.clip_button.clicked.connect(self.start_clip)
+        layout.addWidget(self.clip_button)
+
+        self.save_clip_button = QPushButton("Save Clip")
+        self.save_clip_button.clicked.connect(self.save_clip)
+        layout.addWidget(self.save_clip_button)
 
         # Favorites
-        self.favorites_list = tk.Listbox(self.root)
-        self.favorites_list.pack()
-        self.play_favorite_button = tk.Button(self.root, text="Play Favorite", command=self.play_favorite)
-        self.play_favorite_button.pack()
+        self.favorites_list = QListWidget()
+        layout.addWidget(self.favorites_list)
+
+        self.play_favorite_button = QPushButton("Play Favorite")
+        self.play_favorite_button.clicked.connect(self.play_favorite)
+        layout.addWidget(self.play_favorite_button)
+
+        self.setLayout(layout)
 
     def load_video(self):
         self.video_path = filedialog.askopenfilename(filetypes=[("Video Files", "*.mp4 *.avi")])
@@ -59,16 +75,9 @@ class VideoPlayerApp:
             threading.Thread(target=self.playback).start()
 
     def playback(self):
-        cap = cv2.VideoCapture(self.video_path)
-        while self.is_playing and cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-            cv2.imshow('Video Playback', frame)
-            cv2.waitKey(30)  # Adjust this for speed
-
-        cap.release()
-        cv2.destroyAllWindows()
+        if self.video_clip:
+            self.video_clip.preview()
+        self.is_playing = False
 
     def pause_video(self):
         self.is_playing = False
@@ -97,7 +106,8 @@ class VideoPlayerApp:
             clip = self.favorites[selected[0]]
             clip.preview()
 
-# Create the main window
-root = tk.Tk()
-app = VideoPlayerApp(root)
-root.mainloop()
+if __name__ == "__main__":
+    app = QApplication([])
+    window = VideoPlayerApp()
+    window.show()
+    app.exec_()
