@@ -18,22 +18,14 @@ class VideoPlayerApp(QWidget):
         self.current_clip_start = None
         self.current_clip_end = None
         
-        # Create media player and video widget
+        # Create media player
         self.media_player = QMediaPlayer(None, QMediaPlayer.VideoSurface)
-        self.video_widget = QVideoWidget()
-        self.media_player.setVideoOutput(self.video_widget)
-        
-        # Set aspect ratio mode
-        self.video_widget.setAspectRatioMode(Qt.KeepAspectRatio)
         
         # Create widgets
         self.create_widgets()
         
     def create_widgets(self):
         layout = QVBoxLayout()
-        
-        # Add the video widget to the layout
-        layout.addWidget(self.video_widget)
         
         # Load Video Button
         self.load_button = QPushButton("Load Video")
@@ -104,6 +96,19 @@ class VideoPlayerApp(QWidget):
     def play_video(self):
         if self.video_path:
             try:
+                # Create a new window for video playback
+                self.video_window = QWidget()
+                self.video_window.setWindowTitle("Video Playback")
+                self.video_layout = QVBoxLayout()
+                
+                # Create a video widget and set it as the central widget of the new window
+                self.video_widget = QVideoWidget()
+                self.media_player.setVideoOutput(self.video_widget)
+                self.video_layout.addWidget(self.video_widget)
+                self.video_window.setLayout(self.video_layout)
+                
+                # Show the video window and play the video
+                self.video_window.show()
                 self.media_player.play()
                 self.is_playing = True
                 self.feedback_label.setText("Playing video")
