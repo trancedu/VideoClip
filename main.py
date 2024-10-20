@@ -99,6 +99,20 @@ class VideoPlayerApp(QWidget):
                 # Create a new window for video playback
                 self.video_window = QWidget()
                 self.video_window.setWindowTitle("Video Playback")
+                
+                # Calculate the aspect ratio based on the video's resolution
+                video_width = 800
+                video_height = 600  # Default height in case metadata is not available
+                
+                # Check if metadata is available
+                if self.media_player.isMetaDataAvailable():
+                    resolution = self.media_player.metaData("Resolution")
+                    if resolution:
+                        aspect_ratio = resolution.width() / resolution.height()
+                        video_height = int(video_width / aspect_ratio)
+                
+                # Resize the window to fit the video
+                self.video_window.resize(video_width, video_height)
                 self.video_layout = QVBoxLayout()
                 
                 # Create a video widget and set it as the central widget of the new window
