@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import filedialog
+import cv2
 import threading
+import time
 from moviepy.editor import VideoFileClip
 
 class VideoPlayerApp:
@@ -57,9 +59,16 @@ class VideoPlayerApp:
             threading.Thread(target=self.playback).start()
 
     def playback(self):
-        if self.video_clip:
-            self.video_clip.preview()
-        self.is_playing = False
+        cap = cv2.VideoCapture(self.video_path)
+        while self.is_playing and cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+            cv2.imshow('Video Playback', frame)
+            cv2.waitKey(30)  # Adjust this for speed
+
+        cap.release()
+        cv2.destroyAllWindows()
 
     def pause_video(self):
         self.is_playing = False
