@@ -64,11 +64,10 @@ class VideoPlayerApp(QWidget):
         self.backward_button.setEnabled(False)
         layout.addWidget(self.backward_button)
         
-        # Progress bar
+        # Initialize the position slider here
         self.position_slider = QSlider(Qt.Horizontal)
         self.position_slider.setRange(0, 0)
         self.position_slider.sliderMoved.connect(self.set_position)
-        layout.addWidget(self.position_slider)
         
         # Clip controls
         self.clip_button = QPushButton("Start Clip")
@@ -152,7 +151,7 @@ class VideoPlayerApp(QWidget):
                 
                 # Calculate the aspect ratio based on the video's resolution
                 video_width = 800
-                video_height = 450  # Default height in case metadata is not available
+                video_height = 500  # Default height in case metadata is not available
                 
                 # Check if metadata is available
                 if self.media_player.isMetaDataAvailable():
@@ -169,6 +168,10 @@ class VideoPlayerApp(QWidget):
                 self.video_widget = QVideoWidget()
                 self.media_player.setVideoOutput(self.video_widget)
                 self.video_layout.addWidget(self.video_widget)
+                
+                # Add the progress bar to the video playback window
+                self.video_layout.addWidget(self.position_slider)
+                
                 self.video_window.setLayout(self.video_layout)
                 
                 # Show the video window and play the video
@@ -295,6 +298,10 @@ class VideoPlayerApp(QWidget):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Delete:
             self.delete_clip()
+        elif event.key() == Qt.Key_Right:
+            self.skip(5)
+        elif event.key() == Qt.Key_Left:
+            self.skip(-5)
     
 if __name__ == "__main__":
     debug_mode = True  # Set this to True to enable debug mode
