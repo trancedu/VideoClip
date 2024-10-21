@@ -1,7 +1,7 @@
 import sys
 import os
 import json
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QFileDialog, QLabel, QSlider, QHBoxLayout, QToolTip
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QFileDialog, QLabel, QSlider, QHBoxLayout, QToolTip, QInputDialog, QMenu
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtCore import Qt, QUrl, QTimer
 from PyQt5.QtMultimediaWidgets import QVideoWidget
@@ -236,9 +236,12 @@ class VideoPlayerApp(QWidget):
         if self.current_clip_start is not None:
             self.current_clip_end = self.media_player.position() / 1000.0  # seconds
             if self.current_clip_end > self.current_clip_start:
-                # Save the start and end positions as a tuple
-                clip_positions = (self.current_clip_start, self.current_clip_end)
-                self.favorites.append(clip_positions)
+                # Save the start and end positions as a dictionary
+                clip_data = {
+                    'positions': (self.current_clip_start, self.current_clip_end),
+                    'comment': ""  # Initialize with an empty comment
+                }
+                self.favorites.append(clip_data)
                 self.favorites_list.addItem(f"Clip {len(self.favorites)}: {self.current_clip_start:.2f}s - {self.current_clip_end:.2f}s")
                 self.feedback_label.setText("Clip positions saved!")
 
@@ -255,8 +258,11 @@ class VideoPlayerApp(QWidget):
             os.makedirs(config_dir, exist_ok=True)
             config_file = os.path.join(config_dir, f"{os.path.basename(self.video_path)}.json")
             
+            # Ensure each clip is saved as a dictionary with 'positions' and 'comment'
+            clips_to_save = [{'positions': clip['positions'], 'comment': clip.get('comment', '')} for clip in self.favorites]
+            
             with open(config_file, 'w') as f:
-                json.dump(self.favorites, f)
+                json.dump(clips_to_save, f)
             self.feedback_label.setText("Clip positions saved to file.")
             
     def load_clips_from_file(self):
@@ -266,10 +272,23 @@ class VideoPlayerApp(QWidget):
             
             if os.path.exists(config_file):
                 with open(config_file, 'r') as f:
-                    self.favorites = json.load(f)
+                    loaded_clips = json.load(f)
+                
+                # Check if loaded clips are in the old format (list of tuples)
+                if isinstance(loaded_clips, list) and all(isinstance(clip, list) or isinstance(clip, tuple) for clip in loaded_clips):
+                    # Convert old format to new format
+                    self.favorites = [{'positions': clip, 'comment': ''} for clip in loaded_clips]
+                else:
+                    # Assume the new format
+                    self.favorites = loaded_clips
+                
                 self.favorites_list.clear()
-                for i, (start, end) in enumerate(self.favorites):
-                    self.favorites_list.addItem(f"Clip {i + 1}: {start:.2f}s - {end:.2f}s")
+                for i, clip_data in enumerate(self.favorites):
+                    if isinstance(clip_data, dict) and 'positions' in clip_data:
+                        start, end = clip_data['positions']
+                        self.favorites_list.addItem(f"Clip {i + 1}: {start:.2f}s - {end:.2f}s")
+                    else:
+                        self.feedback_label.setText("Error loading clip data.")
                 self.feedback_label.setText("Clip positions loaded from file.")
             else:
                 self.feedback_label.setText("No saved clip positions found.")
@@ -277,7 +296,7 @@ class VideoPlayerApp(QWidget):
     def play_favorite(self):
         selected_row = self.favorites_list.currentRow()
         if selected_row >= 0:
-            clip_positions = self.favorites[selected_row]
+            clip_data = self.favorites[selected_row]
             if self.video_path:
                 # Save the current position of the main video only if not already saved
                 if not self.position_saved:
@@ -286,7 +305,7 @@ class VideoPlayerApp(QWidget):
                 
                 # Set the media to the main video and play from the start to end positions
                 self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(self.video_path)))
-                self.current_clip_start, self.current_clip_end = clip_positions  # Set the current clip start and end
+                self.current_clip_start, self.current_clip_end = clip_data['positions']  # Set the current clip start and end
                 self.media_player.setPosition(int(self.current_clip_start * 1000))  # Convert to milliseconds
                 self.media_player.play()
                 self.is_playing = True
@@ -385,26 +404,33 @@ class VideoPlayerApp(QWidget):
         if not self.is_playing:
             self.play_video()
 
+    def add_comment_to_clip(self, clip_index, comment):
+        if 0 <= clip_index < len(self.favorites):
+            self.favorites[clip_index]['comment'] = comment
+            self.save_clips_to_file()
+            self.feedback_label.setText(f"Comment added to clip {clip_index + 1}")
+
 class CustomListWidget(QListWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
 
-    def keyPressEvent(self, event):
-        # Propagate the event to the parent widget
-        if event.key() in (Qt.Key_Space, Qt.Key_S, Qt.Key_E):
-            self.parent().keyPressEvent(event)
-        elif event.key() == Qt.Key_L:
-            self.parent().toggle_loop()
-        elif event.key() == Qt.Key_N or event.key() == Qt.Key_Down:
-            self.parent().next_clip()
-        elif event.key() == Qt.Key_P or event.key() == Qt.Key_Up:
-            self.parent().previous_clip()
-        elif event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
-            self.parent().delete_clip()
-        elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-            self.parent().play_favorite()
+    def show_context_menu(self, position):
+        menu = QMenu()
+        add_comment_action = menu.addAction("Add Comment")
+        action = menu.exec_(self.mapToGlobal(position))
+        if action == add_comment_action:
+            self.add_comment()
+
+    def add_comment(self):
+        selected_row = self.currentRow()
+        if selected_row >= 0:
+            comment, ok = QInputDialog.getText(self, "Add Comment", "Enter your comment:")
+            if ok and comment:
+                self.parent().add_comment_to_clip(selected_row, comment)
         else:
-            super().keyPressEvent(event)
+            self.parent().feedback_label.setText("No clip selected to add a comment.")
 
 class ClickableVideoWidget(QVideoWidget):
     def __init__(self, parent=None):
