@@ -372,6 +372,9 @@ class VideoPlayerApp(QWidget):
             self.previous_clip()
     
     def slider_clicked(self):
+        # Reset the current clip end when the slider is clicked
+        self.current_clip_end = None
+
         # Calculate the position based on the click
         value = self.position_slider.value()
         self.set_position(value)
