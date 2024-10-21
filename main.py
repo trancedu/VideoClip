@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLi
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtCore import Qt, QUrl, QTimer
 from PyQt5.QtMultimediaWidgets import QVideoWidget
+import glob
 
 class VideoPlayerApp(QWidget):
     def __init__(self, debug=False, debug_video_path=None):
@@ -22,6 +23,7 @@ class VideoPlayerApp(QWidget):
         self.main_video_position = 0  # Store the last position of the main video
         self.position_saved = False  # Flag to check if the position has been saved
         self.loop_enabled = False  # Flag to check if looping is enabled
+        self.clips_by_video = {}  # Dictionary to store clips by video path
         
         # Create media player
         self.media_player = QMediaPlayer(None, QMediaPlayer.VideoSurface)
@@ -262,43 +264,40 @@ class VideoPlayerApp(QWidget):
         if self.video_path:
             config_dir = os.path.join(os.path.dirname(self.video_path), "config")
             os.makedirs(config_dir, exist_ok=True)
-            config_file = os.path.join(config_dir, f"{os.path.basename(self.video_path)}.json")
-            
-            # Ensure each clip is saved as a dictionary with 'positions' and 'comment'
-            clips_to_save = [{'positions': clip['positions'], 'comment': clip.get('comment', '')} for clip in self.favorites]
+            video_name = os.path.basename(self.video_path)
+            config_file = os.path.join(config_dir, f"{video_name}.json")
             
             with open(config_file, 'w') as f:
-                json.dump(clips_to_save, f)
+                json.dump(self.favorites, f)
             self.feedback_label.setText("Clip positions saved to file.")
             
     def load_clips_from_file(self):
         if self.video_path:
             config_dir = os.path.join(os.path.dirname(self.video_path), "config")
-            config_file = os.path.join(config_dir, f"{os.path.basename(self.video_path)}.json")
             
-            if os.path.exists(config_file):
-                with open(config_file, 'r') as f:
-                    loaded_clips = json.load(f)
-                
-                # Check if loaded clips are in the old format (list of tuples)
-                if isinstance(loaded_clips, list) and all(isinstance(clip, list) or isinstance(clip, tuple) for clip in loaded_clips):
-                    # Convert old format to new format
-                    self.favorites = [{'positions': clip, 'comment': ''} for clip in loaded_clips]
-                else:
-                    # Assume the new format
-                    self.favorites = loaded_clips
-                
-                self.favorites_list.clear()
-                for i, clip_data in enumerate(self.favorites):
-                    if isinstance(clip_data, dict) and 'positions' in clip_data:
-                        start, end = clip_data['positions']
-                        self.favorites_list.addItem(f"Clip {i + 1}: {start:.2f}s - {end:.2f}s")
-                    else:
-                        self.feedback_label.setText("Error loading clip data.")
-                self.feedback_label.setText("Clip positions loaded from file.")
-            else:
-                self.feedback_label.setText("No saved clip positions found.")
-                
+            # Find all JSON files in the config directory
+            json_files = glob.glob(os.path.join(config_dir, "*.json"))
+            
+            self.favorites = []  # Clear current favorites
+            self.favorites_list.clear()  # Clear the list widget
+            
+            for json_file in json_files:
+                with open(json_file, 'r') as f:
+                    clips = json.load(f)
+                    if isinstance(clips, list):
+                        for clip in clips:
+                            if isinstance(clip, dict) and 'positions' in clip:
+                                self.favorites.append(clip)  # Add valid clips to the favorites list
+                            else:
+                                print(f"Invalid clip format in file {json_file}: {clip}")  # Debugging output
+            
+            # Populate the list widget with all clips
+            for i, clip_data in enumerate(self.favorites):
+                start, end = clip_data['positions']
+                self.favorites_list.addItem(f"Clip {i + 1}: {start:.2f}s - {end:.2f}s")
+            
+            self.feedback_label.setText("All clip positions loaded from config folder.")
+    
     def play_favorite(self):
         selected_row = self.favorites_list.currentRow()
         if selected_row >= 0:
