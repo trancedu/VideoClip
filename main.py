@@ -1,6 +1,5 @@
 import sys
 import os
-import tempfile
 import json
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QFileDialog, QLabel, QSlider, QHBoxLayout, QToolTip
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
@@ -303,7 +302,7 @@ class VideoPlayerApp(QWidget):
             if current_position >= int(self.current_clip_end * 1000):  # Convert to milliseconds
                 if self.loop_enabled:
                     # Apply an additional 500ms buffer when looping
-                    adjusted_start = max(0, self.current_clip_start * 1000 - 500)
+                    adjusted_start = max(0, self.current_clip_start * 1000 - 1000)
                     self.media_player.setPosition(int(adjusted_start))
                     self.media_player.play()
                 else:
