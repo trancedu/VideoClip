@@ -307,7 +307,9 @@ class VideoPlayerApp(QWidget):
                     self.media_player.play()
                 else:
                     self.media_player.pause()
+                    self.is_playing = False  # Update the is_playing flag
                     self.feedback_label.setText("Clip playback finished.")
+                    self.current_clip_end = None
     
     def return_to_main_video(self):
         if self.video_path:
@@ -373,6 +375,10 @@ class VideoPlayerApp(QWidget):
         # Calculate the position based on the click
         value = self.position_slider.value()
         self.set_position(value)
+        
+        # If the video is paused, start playing from the new position
+        if not self.is_playing:
+            self.play_video()
 
 class CustomListWidget(QListWidget):
     def __init__(self, parent=None):
