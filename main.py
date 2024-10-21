@@ -349,7 +349,7 @@ class VideoPlayerApp(QWidget):
             self.play_favorite()
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Delete:
+        if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
             self.delete_clip()
         elif event.key() == Qt.Key_Right:
             self.skip(3)  # Fine-tuned seeking
@@ -370,6 +370,8 @@ class VideoPlayerApp(QWidget):
             self.next_clip()
         elif event.key() == Qt.Key_P or event.key() == Qt.Key_Up:
             self.previous_clip()
+        elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+            self.play_favorite()
     
     def slider_clicked(self):
         # Reset the current clip end when the slider is clicked
@@ -397,6 +399,10 @@ class CustomListWidget(QListWidget):
             self.parent().next_clip()
         elif event.key() == Qt.Key_P or event.key() == Qt.Key_Up:
             self.parent().previous_clip()
+        elif event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
+            self.parent().delete_clip()
+        elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+            self.parent().play_favorite()
         else:
             super().keyPressEvent(event)
 
