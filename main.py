@@ -1,7 +1,7 @@
 import sys
 import os
 import json
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QFileDialog, QLabel, QSlider, QHBoxLayout, QToolTip, QInputDialog, QMenu
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QFileDialog, QLabel, QSlider, QHBoxLayout, QToolTip, QInputDialog, QMenu, QLineEdit, QTextEdit
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtCore import Qt, QUrl, QTimer
 from PyQt5.QtMultimediaWidgets import QVideoWidget
@@ -118,8 +118,14 @@ class VideoPlayerApp(QWidget):
         
         # Favorites
         self.favorites_list = CustomListWidget(self)  # Use the custom list widget
-        self.favorites_list.itemDoubleClicked.connect(self.play_favorite)  # Connect double-click signal
+        self.favorites_list.itemSelectionChanged.connect(self.update_comment_box)
         control_layout.addWidget(self.favorites_list)
+        
+        self.comment_box = QTextEdit(self)
+        self.comment_box.setPlaceholderText("Enter comment for selected clip")
+        self.comment_box.setFixedHeight(60)  # Set a fixed height to show three lines
+        self.comment_box.textChanged.connect(self.save_comment)
+        control_layout.addWidget(self.comment_box)
         
         self.play_favorite_button = QPushButton("Play Favorite")
         self.play_favorite_button.clicked.connect(self.play_favorite)
@@ -410,11 +416,30 @@ class VideoPlayerApp(QWidget):
             self.save_clips_to_file()
             self.feedback_label.setText(f"Comment added to clip {clip_index + 1}")
 
+    def update_comment_box(self):
+        selected_row = self.favorites_list.currentRow()
+        if selected_row >= 0:
+            comment = self.favorites[selected_row].get('comment', '')
+            self.comment_box.setText(comment)
+        else:
+            self.comment_box.clear()
+
+    def save_comment(self):
+        selected_row = self.favorites_list.currentRow()
+        if selected_row >= 0:
+            comment = self.comment_box.toPlainText()
+            self.favorites[selected_row]['comment'] = comment
+            self.save_clips_to_file()
+            self.feedback_label.setText(f"Comment updated for clip {selected_row + 1}")
+        else:
+            self.feedback_label.setText("No clip selected to add a comment.")
+
 class CustomListWidget(QListWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
+        self.itemDoubleClicked.connect(self.parent().play_favorite)  # Connect double-click to play_favorite
 
     def show_context_menu(self, position):
         menu = QMenu()
@@ -431,6 +456,23 @@ class CustomListWidget(QListWidget):
                 self.parent().add_comment_to_clip(selected_row, comment)
         else:
             self.parent().feedback_label.setText("No clip selected to add a comment.")
+
+    def keyPressEvent(self, event):
+        # Propagate the event to the parent widget
+        if event.key() in (Qt.Key_Space, Qt.Key_S, Qt.Key_E):
+            self.parent().keyPressEvent(event)
+        elif event.key() == Qt.Key_L:
+            self.parent().toggle_loop()
+        elif event.key() == Qt.Key_N or event.key() == Qt.Key_Down:
+            self.parent().next_clip()
+        elif event.key() == Qt.Key_P or event.key() == Qt.Key_Up:
+            self.parent().previous_clip()
+        elif event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
+            self.parent().delete_clip()
+        elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+            self.parent().play_favorite()
+        else:
+            super().keyPressEvent(event)
 
 class ClickableVideoWidget(QVideoWidget):
     def __init__(self, parent=None):
