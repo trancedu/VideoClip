@@ -366,9 +366,9 @@ class VideoPlayerApp(QWidget):
             self.save_clip()
         elif event.key() == Qt.Key_L:
             self.toggle_loop()
-        elif event.key() == Qt.Key_N:
+        elif event.key() == Qt.Key_N or event.key() == Qt.Key_Down:
             self.next_clip()
-        elif event.key() == Qt.Key_P:
+        elif event.key() == Qt.Key_P or event.key() == Qt.Key_Up:
             self.previous_clip()
     
     def slider_clicked(self):
@@ -393,9 +393,9 @@ class CustomListWidget(QListWidget):
             self.parent().keyPressEvent(event)
         elif event.key() == Qt.Key_L:
             self.parent().toggle_loop()
-        elif event.key() == Qt.Key_N:
+        elif event.key() == Qt.Key_N or event.key() == Qt.Key_Down:
             self.parent().next_clip()
-        elif event.key() == Qt.Key_P:
+        elif event.key() == Qt.Key_P or event.key() == Qt.Key_Up:
             self.parent().previous_clip()
         else:
             super().keyPressEvent(event)
