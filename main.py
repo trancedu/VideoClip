@@ -72,7 +72,7 @@ class VideoPlayerApp(QWidget):
         video_layout.addLayout(progress_layout)
         
         # Add video layout to main layout
-        main_layout.addLayout(video_layout, 7)  # 7/8 of the width
+        main_layout.addLayout(video_layout, 7)  # 7/8 of the width for video and controls
         
         # Control panel
         control_layout = QVBoxLayout()
@@ -116,6 +116,8 @@ class VideoPlayerApp(QWidget):
         
         # Feedback label
         self.feedback_label = QLabel("")
+        self.feedback_label.setWordWrap(True)  # Enable word wrapping
+        self.feedback_label.setFixedWidth(self.width() // 8)  # Set a fixed width to 1/8 of the window width
         control_layout.addWidget(self.feedback_label)
         
         # Favorites
@@ -145,7 +147,7 @@ class VideoPlayerApp(QWidget):
         control_layout.addWidget(self.return_button)
         
         # Add control layout to main layout
-        main_layout.addLayout(control_layout, 1)  # 1/8 of the width
+        main_layout.addLayout(control_layout, 1)  # 1/8 of the width for feedback and controls
         
         self.setLayout(main_layout)
         
