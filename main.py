@@ -15,9 +15,9 @@ class VideoPlayerApp(QWidget):
         # Get the screen size
         screen = QApplication.primaryScreen()
         screen_size = screen.size()
-        
+
         # Check if the screen width is larger than 1800
-        if screen_size.width() > 1800:
+        if screen_size.width() >= 1800:
             self.resize(1800, 1200)  # Set window size to 1800x1200
         else:
             self.showMaximized()  # Maximize the window to use full screen space
