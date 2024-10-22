@@ -11,7 +11,17 @@ class VideoPlayerApp(QWidget):
     def __init__(self, debug=False, debug_video_path=None):
         super().__init__()
         self.setWindowTitle("English Listening Practice")
-        self.resize(1800, 1200)  # Set the window size to 1800x1200
+        
+        # Get the screen size
+        screen = QApplication.primaryScreen()
+        screen_size = screen.size()
+        
+        # Check if the screen width is larger than 1800
+        if screen_size.width() > 1800:
+            self.resize(1800, 1200)  # Set window size to 1800x1200
+        else:
+            self.showMaximized()  # Maximize the window to use full screen space
+        
         self.setFocusPolicy(Qt.StrongFocus)  # Ensure the window can capture key events
         
         # Initialize variables
