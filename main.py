@@ -338,7 +338,7 @@ class VideoPlayerApp(QWidget):
                     self.media_player.play()
                     self.is_playing = True
                     self.return_button.setEnabled(True)
-                    self.feedback_label.setText(f"Playing clip {selected_row} from {os.path.basename(video_path)}")
+                    self.feedback_label.setText(f"Playing clip {selected_row}")
                 else:
                     self.feedback_label.setText("Video file not found!")
             else:
