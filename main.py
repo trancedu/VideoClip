@@ -278,58 +278,51 @@ class VideoPlayerApp(QWidget):
             self.feedback_label.setText("All clip positions saved to their respective files.")
             
     def load_clips_from_file(self):
-        if self.video_path:
-            config_dir = os.path.join(os.path.dirname(self.video_path), "config")
-            
-            # Find all JSON files in the config directory
-            json_files = glob.glob(os.path.join(config_dir, "*.json"))
-            
-            self.clips_by_video = {}  # Clear current clips by video
-            self.favorites_list.clear()  # Clear the list widget
-            
-            for json_file in json_files:
-                video_name = os.path.splitext(os.path.basename(json_file))[0]  # Get the video name without extension
-                with open(json_file, 'r') as f:
-                    clips = json.load(f)
-                    if isinstance(clips, list):
-                        self.clips_by_video[video_name] = []
-                        for clip in clips:
-                            # Convert old format (list) to new format (dict)
-                            if isinstance(clip, list) and len(clip) == 2:
-                                clip = {'positions': clip, 'comment': ''}
-                            if isinstance(clip, dict) and 'positions' in clip:
-                                self.clips_by_video[video_name].append(clip)
-                            else:
-                                print(f"Invalid clip format in file {json_file}: {clip}")  # Debugging output
+        config_dir = os.path.join(os.path.dirname(self.video_path), "config")
+        
+        # Find all JSON files in the config directory
+        json_files = glob.glob(os.path.join(config_dir, "*.json"))
+        
+        self.clips_by_video = {}  # Clear current clips by video
+        self.favorites_list.clear()  # Clear the list widget
+        self.favorites = []  # Clear current favorites
+        
+        for json_file in json_files:
+            video_name = os.path.splitext(os.path.basename(json_file))[0]  # Get the video name without extension
+            video_path = os.path.join(os.path.dirname(self.video_path), video_name)  # Assume video files are in the same directory
+            with open(json_file, 'r') as f:
+                clips = json.load(f)
+                if isinstance(clips, list):
+                    self.clips_by_video[video_name] = []
+                    for clip in clips:
+                        # Convert old format (list) to new format (dict)
+                        if isinstance(clip, list) and len(clip) == 2:
+                            clip = {'positions': clip, 'comment': ''}
+                        if isinstance(clip, dict) and 'positions' in clip:
+                            clip['video_path'] = video_path  # Set video path directly
+                            self.clips_by_video[video_name].append(clip)
+                            self.favorites.append(clip)  # Add to favorites for easy access
+                        else:
+                            print(f"Invalid clip format in file {json_file}: {clip}")  # Debugging output
             
             # Populate the list widget with all clips grouped by video name
-            self.favorites = []  # Clear current favorites
-            for video_name, clips in self.clips_by_video.items():
-                video_item = QListWidgetItem(f"Video: {video_name}")
-                video_item.setData(Qt.UserRole, 'video')  # Mark as video name
-                self.favorites_list.addItem(video_item)
-                for i, clip_data in enumerate(clips):
-                    clip_item = QListWidgetItem(f"  Clip {i + 1}: {clip_data['positions'][0]:.2f}s - {clip_data['positions'][1]:.2f}s")
-                    clip_item.setData(Qt.UserRole, 'clip')  # Mark as clip
-                    self.favorites_list.addItem(clip_item)
-                    self.favorites.append(clip_data)  # Add to favorites for easy access
-            
-            self.feedback_label.setText("All clip positions loaded from config folder.")
+            video_item = QListWidgetItem(f"Video: {video_name}")
+            video_item.setData(Qt.UserRole, 'video')  # Mark as video name
+            self.favorites_list.addItem(video_item)
+            for i, clip_data in enumerate(self.clips_by_video[video_name]):
+                clip_item = QListWidgetItem(f"  Clip {i + 1}: {clip_data['positions'][0]:.2f}s - {clip_data['positions'][1]:.2f}s")
+                clip_item.setData(Qt.UserRole, 'clip')  # Mark as clip
+                self.favorites_list.addItem(clip_item)
+        
+        self.feedback_label.setText("All clip positions loaded from config folder.")
     
     def play_favorite(self):
         selected_row = self.favorites_list.currentRow()
         if selected_row >= 0:
-            # Find the most recent video name above the selected clip
-            video_name = None
-            for row in range(selected_row, -1, -1):
-                item = self.favorites_list.item(row)
-                if item.data(Qt.UserRole) == 'video':
-                    video_name = item.text().replace("Video: ", "")
-                    break
-            
-            if video_name:
+            item = self.favorites_list.item(selected_row)
+            if item.data(Qt.UserRole) == 'clip':
                 clip_data = self.favorites[selected_row - 1]  # Adjust index for video name
-                video_path = os.path.join(os.path.dirname(self.video_path), video_name)
+                video_path = clip_data['video_path']
                 if os.path.exists(video_path):
                     # Save the current position of the main video only if not already saved
                     if not self.position_saved:
@@ -343,14 +336,12 @@ class VideoPlayerApp(QWidget):
                     self.media_player.play()
                     self.is_playing = True
                     self.return_button.setEnabled(True)
-                    self.feedback_label.setText(f"Playing clip {selected_row} from {video_name}")
+                    self.feedback_label.setText(f"Playing clip {selected_row} from {os.path.basename(video_path)}")
                 else:
                     self.feedback_label.setText("Video file not found!")
             else:
-                self.feedback_label.setText("No video name found for the selected clip.")
-        else:
-            self.feedback_label.setText("No clip selected.")
-            
+                self.feedback_label.setText("No clip selected.")
+    
     def check_loop_position(self, current_position):
         if self.current_clip_end is not None:  # Ensure current_clip_end is set
             if current_position >= int(self.current_clip_end * 1000):  # Convert to milliseconds
