@@ -264,12 +264,16 @@ class VideoPlayerApp(QWidget):
         if self.video_path:
             config_dir = os.path.join(os.path.dirname(self.video_path), "config")
             os.makedirs(config_dir, exist_ok=True)
-            video_name = os.path.basename(self.video_path)
+            video_name = os.path.splitext(os.path.basename(self.video_path))[0]  # Get the video name without extension
             config_file = os.path.join(config_dir, f"{video_name}.json")
             
+            # Remove duplicates and sort by start time
+            unique_clips = {tuple(clip['positions']): clip for clip in self.favorites}.values()
+            sorted_clips = sorted(unique_clips, key=lambda clip: clip['positions'][0])
+            
             with open(config_file, 'w') as f:
-                json.dump(self.favorites, f)
-            self.feedback_label.setText("Clip positions saved to file.")
+                json.dump(sorted_clips, f)
+            self.feedback_label.setText(f"Clip positions saved to {config_file}.")
             
     def load_clips_from_file(self):
         if self.video_path:
@@ -278,23 +282,32 @@ class VideoPlayerApp(QWidget):
             # Find all JSON files in the config directory
             json_files = glob.glob(os.path.join(config_dir, "*.json"))
             
-            self.favorites = []  # Clear current favorites
+            self.clips_by_video = {}  # Clear current clips by video
             self.favorites_list.clear()  # Clear the list widget
             
             for json_file in json_files:
+                video_name = os.path.splitext(os.path.basename(json_file))[0]  # Get the video name without extension
                 with open(json_file, 'r') as f:
                     clips = json.load(f)
                     if isinstance(clips, list):
+                        self.clips_by_video[video_name] = []
                         for clip in clips:
+                            # Convert old format (list) to new format (dict)
+                            if isinstance(clip, list) and len(clip) == 2:
+                                clip = {'positions': clip, 'comment': ''}
                             if isinstance(clip, dict) and 'positions' in clip:
-                                self.favorites.append(clip)  # Add valid clips to the favorites list
+                                self.clips_by_video[video_name].append(clip)
                             else:
                                 print(f"Invalid clip format in file {json_file}: {clip}")  # Debugging output
             
-            # Populate the list widget with all clips
-            for i, clip_data in enumerate(self.favorites):
-                start, end = clip_data['positions']
-                self.favorites_list.addItem(f"Clip {i + 1}: {start:.2f}s - {end:.2f}s")
+            # Populate the list widget with all clips grouped by video name
+            self.favorites = []  # Clear current favorites
+            for video_name, clips in self.clips_by_video.items():
+                self.favorites_list.addItem(f"Video: {video_name}")
+                for i, clip_data in enumerate(clips):
+                    start, end = clip_data['positions']
+                    self.favorites_list.addItem(f"  Clip {i + 1}: {start:.2f}s - {end:.2f}s")
+                    self.favorites.append(clip_data)  # Add to favorites for easy access
             
             self.feedback_label.setText("All clip positions loaded from config folder.")
     
@@ -417,7 +430,8 @@ class VideoPlayerApp(QWidget):
 
     def update_comment_box(self):
         selected_row = self.favorites_list.currentRow()
-        if selected_row >= 0:
+        # Ensure the selected row corresponds to a clip, not a video name
+        if selected_row >= 0 and selected_row < len(self.favorites):
             comment = self.favorites[selected_row].get('comment', '')
             self.comment_box.setText(comment)
         else:
