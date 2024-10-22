@@ -1,7 +1,7 @@
 import sys
 import os
 import json
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QFileDialog, QLabel, QSlider, QHBoxLayout, QToolTip, QInputDialog, QMenu, QLineEdit, QTextEdit
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget, QFileDialog, QLabel, QSlider, QHBoxLayout, QToolTip, QInputDialog, QMenu, QLineEdit, QTextEdit, QListWidgetItem
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtCore import Qt, QUrl, QTimer
 from PyQt5.QtMultimediaWidgets import QVideoWidget
@@ -305,10 +305,13 @@ class VideoPlayerApp(QWidget):
             # Populate the list widget with all clips grouped by video name
             self.favorites = []  # Clear current favorites
             for video_name, clips in self.clips_by_video.items():
-                self.favorites_list.addItem(f"Video: {video_name}")
+                video_item = QListWidgetItem(f"Video: {video_name}")
+                video_item.setData(Qt.UserRole, 'video')  # Mark as video name
+                self.favorites_list.addItem(video_item)
                 for i, clip_data in enumerate(clips):
-                    start, end = clip_data['positions']
-                    self.favorites_list.addItem(f"  Clip {i + 1}: {start:.2f}s - {end:.2f}s")
+                    clip_item = QListWidgetItem(f"  Clip {i + 1}: {clip_data['positions'][0]:.2f}s - {clip_data['positions'][1]:.2f}s")
+                    clip_item.setData(Qt.UserRole, 'clip')  # Mark as clip
+                    self.favorites_list.addItem(clip_item)
                     self.favorites.append(clip_data)  # Add to favorites for easy access
             
             self.feedback_label.setText("All clip positions loaded from config folder.")
@@ -316,23 +319,35 @@ class VideoPlayerApp(QWidget):
     def play_favorite(self):
         selected_row = self.favorites_list.currentRow()
         if selected_row >= 0:
-            clip_data = self.favorites[selected_row]
-            if self.video_path:
-                # Save the current position of the main video only if not already saved
-                if not self.position_saved:
-                    self.main_video_position = self.media_player.position()
-                    self.position_saved = True
-                
-                # Set the media to the main video and play from the start to end positions
-                self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(self.video_path)))
-                self.current_clip_start, self.current_clip_end = clip_data['positions']  # Set the current clip start and end
-                self.media_player.setPosition(int(self.current_clip_start * 1000))  # Convert to milliseconds
-                self.media_player.play()
-                self.is_playing = True
-                self.return_button.setEnabled(True)
-                self.feedback_label.setText(f"Playing clip {selected_row + 1}")
+            # Find the most recent video name above the selected clip
+            video_name = None
+            for row in range(selected_row, -1, -1):
+                item = self.favorites_list.item(row)
+                if item.data(Qt.UserRole) == 'video':
+                    video_name = item.text().replace("Video: ", "")
+                    break
+            
+            if video_name:
+                clip_data = self.favorites[selected_row - 1]  # Adjust index for video name
+                video_path = os.path.join(os.path.dirname(self.video_path), video_name)
+                if os.path.exists(video_path):
+                    # Save the current position of the main video only if not already saved
+                    if not self.position_saved:
+                        self.main_video_position = self.media_player.position()
+                        self.position_saved = True
+                    
+                    # Set the media to the correct video and play from the start to end positions
+                    self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(video_path)))
+                    self.current_clip_start, self.current_clip_end = clip_data['positions']  # Set the current clip start and end
+                    self.media_player.setPosition(int(self.current_clip_start * 1000))  # Convert to milliseconds
+                    self.media_player.play()
+                    self.is_playing = True
+                    self.return_button.setEnabled(True)
+                    self.feedback_label.setText(f"Playing clip {selected_row} from {video_name}")
+                else:
+                    self.feedback_label.setText("Video file not found!")
             else:
-                self.feedback_label.setText("Main video file not found!")
+                self.feedback_label.setText("No video name found for the selected clip.")
         else:
             self.feedback_label.setText("No clip selected.")
             
