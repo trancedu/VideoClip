@@ -261,19 +261,21 @@ class VideoPlayerApp(QWidget):
             self.feedback_label.setText("Set the clip start point first.")
             
     def save_clips_to_file(self):
-        if self.video_path:
+        if self.clips_by_video:
             config_dir = os.path.join(os.path.dirname(self.video_path), "config")
             os.makedirs(config_dir, exist_ok=True)
-            video_name = os.path.splitext(os.path.basename(self.video_path))[0]  # Get the video name without extension
-            config_file = os.path.join(config_dir, f"{video_name}.json")
             
-            # Remove duplicates and sort by start time
-            unique_clips = {tuple(clip['positions']): clip for clip in self.favorites}.values()
-            sorted_clips = sorted(unique_clips, key=lambda clip: clip['positions'][0])
+            for video_name, clips in self.clips_by_video.items():
+                config_file = os.path.join(config_dir, f"{video_name}.json")
+                
+                # Remove duplicates and sort by start time
+                unique_clips = {tuple(clip['positions']): clip for clip in clips}.values()
+                sorted_clips = sorted(unique_clips, key=lambda clip: clip['positions'][0])
+                
+                with open(config_file, 'w') as f:
+                    json.dump(sorted_clips, f)
             
-            with open(config_file, 'w') as f:
-                json.dump(sorted_clips, f)
-            self.feedback_label.setText(f"Clip positions saved to {config_file}.")
+            self.feedback_label.setText("All clip positions saved to their respective files.")
             
     def load_clips_from_file(self):
         if self.video_path:
