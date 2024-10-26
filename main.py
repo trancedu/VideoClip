@@ -5,6 +5,7 @@ import vlc
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget,
     QFileDialog, QLabel, QSlider, QHBoxLayout, QToolTip, QInputDialog, QMenu,
+    QStyle  # Add this import
 )
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QMouseEvent
@@ -75,7 +76,7 @@ class VideoPlayerApp(QWidget):
         progress_layout = QHBoxLayout()
 
         # Progress bar
-        self.position_slider = QSlider(Qt.Horizontal)
+        self.position_slider = ClickableSlider(Qt.Horizontal)  # Use the custom slider
         self.position_slider.setRange(0, 0)
         self.position_slider.sliderMoved.connect(self.set_position)
         self.position_slider.sliderPressed.connect(self.slider_clicked)  # Connect slider click
@@ -487,6 +488,16 @@ class ClickableVideoWidget(QWidget):
         super().resizeEvent(event)
         if self.parent().media_player:
             self.parent().media_player.video_set_scale(0)
+
+class ClickableSlider(QSlider):
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            # Calculate the new position based on the click
+            new_value = QStyle.sliderValueFromPosition(
+                self.minimum(), self.maximum(), event.x(), self.width())
+            self.setValue(new_value)
+            self.parent().set_position(new_value)
+        super().mousePressEvent(event)
 
 if __name__ == "__main__":
     debug_mode = True  # Set this to True to enable debug mode
