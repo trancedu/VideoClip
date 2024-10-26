@@ -202,7 +202,12 @@ class VideoPlayerApp(QWidget):
                 self, "Open Video File", "", "Video Files (*.mp4 *.avi)", options=options)
         
         if self.video_path and os.path.exists(self.video_path):
+            # Update the media player with the new video path
             self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(self.video_path)))
+            
+            # Update the paths for loading and saving clips
+            self.update_clip_paths()
+
             self.play_button.setEnabled(True)
             self.pause_button.setEnabled(True)
             self.forward_button.setEnabled(True)
@@ -219,6 +224,12 @@ class VideoPlayerApp(QWidget):
         else:
             self.feedback_label.setText("Video file not found.")
     
+    def update_clip_paths(self):
+        # Update the paths for loading and saving clips based on the new video path
+        self.config_dir = os.path.join(os.path.dirname(self.video_path), "config")
+        os.makedirs(self.config_dir, exist_ok=True)
+        self.config_file = os.path.join(self.config_dir, f"{os.path.basename(self.video_path)}.json")
+
     def play_video(self):
         if self.video_path:
             try:
@@ -270,24 +281,21 @@ class VideoPlayerApp(QWidget):
             
     def save_clips_to_file(self):
         if self.video_path:
-            config_dir = os.path.join(os.path.dirname(self.video_path), "config")
-            os.makedirs(config_dir, exist_ok=True)
-            config_file = os.path.join(config_dir, f"{os.path.basename(self.video_path)}.json")
-            
-            # Ensure each clip is saved as a dictionary with 'positions' and 'comment'
+            # Use the updated config_file path
             clips_to_save = [{'positions': clip['positions'], 'comment': clip.get('comment', '')} for clip in self.favorites]
             
-            with open(config_file, 'w') as f:
+            with open(self.config_file, 'w') as f:
                 json.dump(clips_to_save, f)
-            self.feedback_label.setText("Clip positions saved to file.")
             
+            # Update the favorites list widget
+            self.update_favorites_list()
+            self.feedback_label.setText("Clip positions saved to file.")
+
     def load_clips_from_file(self):
         if self.video_path:
-            config_dir = os.path.join(os.path.dirname(self.video_path), "config")
-            config_file = os.path.join(config_dir, f"{os.path.basename(self.video_path)}.json")
-            
-            if os.path.exists(config_file):
-                with open(config_file, 'r') as f:
+            # Use the updated config_file path
+            if os.path.exists(self.config_file):
+                with open(self.config_file, 'r') as f:
                     loaded_clips = json.load(f)
                 
                 # Check if loaded clips are in the old format (list of tuples)
@@ -298,13 +306,8 @@ class VideoPlayerApp(QWidget):
                     # Assume the new format
                     self.favorites = loaded_clips
                 
-                self.favorites_list.clear()
-                for i, clip_data in enumerate(self.favorites):
-                    if isinstance(clip_data, dict) and 'positions' in clip_data:
-                        start, end = clip_data['positions']
-                        self.favorites_list.addItem(f"Clip {i + 1}: {start:.2f}s - {end:.2f}s")
-                    else:
-                        self.feedback_label.setText("Error loading clip data.")
+                # Update the favorites list widget
+                self.update_favorites_list()
                 self.feedback_label.setText("Clip positions loaded from file.")
             else:
                 self.feedback_label.setText("No saved clip positions found.")
@@ -444,6 +447,14 @@ class VideoPlayerApp(QWidget):
         else:
             self.feedback_label.setText("No clip selected to add a comment.")
 
+    def update_favorites_list(self):
+        """Update the favorites list widget with the current clips."""
+        self.favorites_list.clear()
+        for i, clip_data in enumerate(self.favorites):
+            if isinstance(clip_data, dict) and 'positions' in clip_data:
+                start, end = clip_data['positions']
+                self.favorites_list.addItem(f"Clip {i + 1}: {start:.2f}s - {end:.2f}s")
+
 class CustomListWidget(QListWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -494,7 +505,7 @@ class ClickableVideoWidget(QVideoWidget):
 
 if __name__ == "__main__":
     debug_mode = True  # Set this to True to enable debug mode
-    debug_video_path = "/Users/trance/Movies/S04.1080p.中英字幕/Fresh.Off.the.Boat.S04E03.1080p.AMZN.WEB.mp4"
+    debug_video_path = "/Users/trance/Movies/S04.1080p.中英字幕/Fresh.Off.the.Boat.S04E08.1080p.AMZN.WEB.mp4"
     
     app = QApplication(sys.argv)
     window = VideoPlayerApp(debug=debug_mode, debug_video_path=debug_video_path)
