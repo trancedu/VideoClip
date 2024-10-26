@@ -41,6 +41,10 @@ class VideoPlayerApp(QWidget):
         self.instance = vlc.Instance()
         self.media_player = self.instance.media_player_new()
 
+        # Disable VLC's handling of mouse and key inputs
+        self.media_player.video_set_mouse_input(False)
+        self.media_player.video_set_key_input(False)
+        
         # Create widgets
         self.create_widgets()
 
