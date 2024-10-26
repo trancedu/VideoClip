@@ -305,6 +305,7 @@ class VideoPlayerApp(QWidget):
 
     def load_clips_from_file(self):
         if self.video_path:
+            self.favorites = []
             # Use the updated config_file path
             if os.path.exists(self.config_file):
                 with open(self.config_file, 'r') as f:
@@ -318,11 +319,12 @@ class VideoPlayerApp(QWidget):
                     # Assume the new format
                     self.favorites = loaded_clips
 
-                # Update the favorites list widget
-                self.update_favorites_list()
                 self.feedback_label.setText("Clip positions loaded from file.")
             else:
                 self.feedback_label.setText("No saved clip positions found.")
+            
+            # Update the favorites list widget
+            self.update_favorites_list()
 
     def play_favorite(self):
         selected_row = self.favorites_list.currentRow()
