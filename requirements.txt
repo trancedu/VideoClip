@@ -1,5 +1,2 @@
-opencv-python
-moviepy
-pygame
-ffpyplayer
-tk
+PyQt5
+python-vlc
