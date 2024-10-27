@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (
     QFileDialog, QLabel, QSlider, QHBoxLayout, QToolTip, QInputDialog, QMenu,
     QStyle  # Add this import
 )
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QEvent
 from PyQt5.QtGui import QMouseEvent
 
 class VideoPlayerApp(QWidget):
@@ -57,6 +57,9 @@ class VideoPlayerApp(QWidget):
         # Load a specific video if debug flag is set
         if debug and debug_video_path:
             self.load_video(video_path=debug_video_path)
+
+        # Install an event filter to capture key events globally
+        QApplication.instance().installEventFilter(self)
 
     def create_widgets(self):
         # Main layout
@@ -202,6 +205,15 @@ class VideoPlayerApp(QWidget):
             value = self.position_slider.minimum() + (self.position_slider.maximum() - self.position_slider.minimum()) * pos / self.position_slider.width()
             tooltip_time = self.format_time(int(value))
             QToolTip.showText(event.globalPos(), tooltip_time, self.position_slider)
+        # Check if the event is a key press event
+        elif event.type() == QEvent.KeyPress:
+            # Handle left and right arrow keys globally
+            if event.key() == Qt.Key_Right:
+                self.skip(3)  # Fine-tuned seeking
+                return True  # Event handled
+            elif event.key() == Qt.Key_Left:
+                self.skip(-3)  # Fine-tuned seeking
+                return True  # Event handled
         return super().eventFilter(source, event)
 
     def load_video(self, video_path=None):
