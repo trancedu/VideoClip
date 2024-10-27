@@ -519,7 +519,8 @@ class ClickableSlider(QSlider):
 
 if __name__ == "__main__":
     debug_mode = True  # Set this to True to enable debug mode
-    debug_video_path = r"C:\Users\tranc\Videos\S04.1080p.中英字幕\Fresh.Off.the.Boat.S04E01.1080p.AMZN.WEB.mp4"
+    home_path = os.path.expanduser("~")
+    debug_video_path = os.path.join(home_path, r"Videos\S04.1080p.中英字幕\Fresh.Off.the.Boat.S04E01.1080p.AMZN.WEB.mp4")
 
     app = QApplication(sys.argv)
     window = VideoPlayerApp(debug=debug_mode, debug_video_path=debug_video_path)
