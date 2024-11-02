@@ -11,7 +11,7 @@ from PyQt5.QtCore import Qt, QTimer, QEvent
 from PyQt5.QtGui import QMouseEvent
 
 class VideoPlayerApp(QWidget):
-    def __init__(self, debug=False, debug_video_path=None):
+    def __init__(self, debug=False, debug_video_path=None, config_dir=None):
         super().__init__()
         self.setWindowTitle("English Listening Practice")
 
@@ -53,6 +53,12 @@ class VideoPlayerApp(QWidget):
         self.timer.setInterval(200)  # Adjust the interval as needed
         self.timer.timeout.connect(self.update_position)
         self.timer.timeout.connect(self.check_loop_position)
+
+        # Set the config path
+        if config_dir:
+            self.config_dir = config_dir
+        else:
+            self.config_dir = os.path.join(os.getcwd(), "config")
 
         # Load a specific video if debug flag is set
         if debug and debug_video_path:
@@ -250,8 +256,6 @@ class VideoPlayerApp(QWidget):
             self.feedback_label.setText("Video file not found.")
 
     def update_clip_paths(self):
-        # Update the paths for loading and saving clips based on the new video path
-        self.config_dir = os.path.join(os.path.dirname(self.video_path), "config")
         os.makedirs(self.config_dir, exist_ok=True)
         self.config_file = os.path.join(self.config_dir, f"{os.path.basename(self.video_path)}.json")
 
@@ -522,7 +526,10 @@ if __name__ == "__main__":
     home_path = os.path.expanduser("~")
     debug_video_path = os.path.join(home_path, r"Videos\S04.1080p.中英字幕\Fresh.Off.the.Boat.S04E01.1080p.AMZN.WEB.mp4")
 
+    # Define the config path
+    config_dir = os.path.join(home_path, r"OneDrive\Projects\config")
+
     app = QApplication(sys.argv)
-    window = VideoPlayerApp(debug=debug_mode, debug_video_path=debug_video_path)
+    window = VideoPlayerApp(debug=debug_mode, debug_video_path=debug_video_path, config_dir=config_dir)
     window.show()
     sys.exit(app.exec_())
