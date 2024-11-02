@@ -440,6 +440,9 @@ class VideoPlayerApp(QWidget):
             self.favorites_list.takeItem(selected_row)
             self.save_clips_to_file()
             self.feedback_label.setText(f"Deleted clip {selected_row + 1}")
+            if self.favorites_list.count() > 0:
+                self.favorites_list.setCurrentRow(max(selected_row - 1, 0))
+            
         else:
             self.feedback_label.setText("No clip selected to delete.")
 
