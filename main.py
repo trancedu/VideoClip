@@ -296,20 +296,35 @@ class VideoPlayerApp(QWidget):
         if self.current_clip_start is not None:
             self.current_clip_end = self.media_player.get_time() / 1000.0  # seconds
             if self.current_clip_end > self.current_clip_start:
-                # Save the start and end positions as a dictionary
                 clip_data = {
                     'positions': (self.current_clip_start, self.current_clip_end),
                 }
                 self.favorites.append(clip_data)
-                self.favorites_list.addItem(f"Clip {len(self.favorites)}: {self.current_clip_start:.2f}s - {self.current_clip_end:.2f}s")
-                self.feedback_label.setText("Clip positions saved!")
 
+                # Sort clips after adding a new one
+                self.sort_clips()
+
+                # Update the favorites list widget
+                self.update_favorites_list()
+                
+                self.feedback_label.setText("Clip positions saved!")
+                
                 # Save to JSON file
                 self.save_clips_to_file()
+
+                # Find the index of the newly added clip
+                new_clip_index = self.favorites.index(clip_data)
+
+                # Select the newly added clip
+                self.favorites_list.setCurrentRow(new_clip_index)
             else:
                 self.feedback_label.setText("Invalid clip duration.")
         else:
             self.feedback_label.setText("Set the clip start point first.")
+
+    def sort_clips(self):
+        """Sort the favorites list by start time."""
+        self.favorites.sort(key=lambda clip: clip['positions'][0])
 
     def save_clips_to_file(self):
         if self.video_path:
@@ -326,23 +341,20 @@ class VideoPlayerApp(QWidget):
     def load_clips_from_file(self):
         if self.video_path:
             self.favorites = []
-            # Use the updated config_file path
             if os.path.exists(self.config_file):
                 with open(self.config_file, 'r') as f:
                     loaded_clips = json.load(f)
 
-                # Check if loaded clips are in the old format (list of tuples)
-                if isinstance(loaded_clips, list) and all(isinstance(clip, list) or isinstance(clip, tuple) for clip in loaded_clips):
-                    # Convert old format to new format
-                    self.favorites = [{'positions': clip} for clip in loaded_clips]
-                else:
-                    # Assume the new format
+                if isinstance(loaded_clips, list) and all(isinstance(clip, dict) for clip in loaded_clips):
                     self.favorites = loaded_clips
 
                 self.feedback_label.setText("Clip positions loaded from file.")
             else:
                 self.feedback_label.setText("No saved clip positions found.")
             
+            # Sort clips after loading
+            self.sort_clips()
+
             # Update the favorites list widget
             self.update_favorites_list()
 
