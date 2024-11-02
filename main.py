@@ -269,6 +269,9 @@ class VideoPlayerApp(QWidget):
 
             # Automatically play the video after loading
             self.play_video()
+
+            # Set focus to the main window to prevent spacebar from triggering the button again
+            self.setFocus()
         else:
             self.feedback_label.setText("Video file not found.")
 
