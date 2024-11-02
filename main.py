@@ -40,6 +40,10 @@ class VideoPlayerApp(QWidget):
         # Initialize mode
         self.audio_mode = False  # Start in video mode
 
+        # Initialize dark mode
+        self.dark_mode = True  # Start in dark mode
+        self.setStyleSheet(self.dark_mode_stylesheet())  # Apply dark mode stylesheet
+
         # Create VLC instance and media player
         self.instance = vlc.Instance()
         self.media_player = self.instance.media_player_new()
@@ -179,6 +183,11 @@ class VideoPlayerApp(QWidget):
         self.toggle_mode_button = QPushButton("Audio/Video Mode")
         self.toggle_mode_button.clicked.connect(self.toggle_video_audio_mode)
         control_layout.addWidget(self.toggle_mode_button)
+
+        # Toggle Dark Mode Button
+        self.toggle_dark_mode_button = QPushButton("Dark/Light Mode")
+        self.toggle_dark_mode_button.clicked.connect(self.toggle_dark_mode)
+        control_layout.addWidget(self.toggle_dark_mode_button)
 
         # Add control layout to main layout
         main_layout.addLayout(control_layout, 1)  # 1/8 of the width
@@ -506,6 +515,92 @@ class VideoPlayerApp(QWidget):
             self.video_widget.show()
             self.toggle_mode_button.setText("Switch to Audio Mode")
             self.feedback_label.setText("Video mode enabled.")
+
+    def toggle_dark_mode(self):
+        """Toggle between light and dark mode."""
+        self.dark_mode = not self.dark_mode
+        if self.dark_mode:
+            self.setStyleSheet(self.dark_mode_stylesheet())
+            self.toggle_dark_mode_button.setText("Disable Dark Mode")
+            self.feedback_label.setText("Dark mode enabled.")
+        else:
+            self.setStyleSheet(self.light_mode_stylesheet())  # Apply light mode stylesheet
+            self.toggle_dark_mode_button.setText("Enable Dark Mode")
+            self.feedback_label.setText("Dark mode disabled.")
+
+    def light_mode_stylesheet(self):
+        """Return the stylesheet for light mode."""
+        return """
+        QWidget {
+            background-color: #FFFFFF;
+            color: #000000;
+        }
+        QPushButton {
+            font-size: 30px;  /* Adjusted font size */
+            background-color: #F0F0F0;
+            color: #000000;
+            border: 1px solid #CCCCCC;
+        }
+        QPushButton:hover {
+            background-color: #E0E0E0;
+        }
+        QSlider::groove:horizontal {
+            border: 1px solid #CCCCCC;
+            height: 8px;
+            background: #E0E0E0;
+        }
+        QSlider::handle:horizontal {
+            background: #CCCCCC;
+            border: 1px solid #CCCCCC;
+            width: 18px;
+            margin: -2px 0;
+            border-radius: 3px;
+        }
+        QListWidget {
+            background-color: #FFFFFF;
+            color: #000000;
+        }
+        QLabel {
+            color: #000000;
+        }
+        """
+
+    def dark_mode_stylesheet(self):
+        """Return the stylesheet for dark mode."""
+        return """
+        QWidget {
+            background-color: #2E2E2E;
+            color: #FFFFFF;
+        }
+        QPushButton {
+            background-color: #4A4A4A;
+            color: #FFFFFF;
+            border: 1px solid #5A5A5A;
+            font-size: 30px;  /* Adjusted font size */
+        }
+        QPushButton:hover {
+            background-color: #5A5A5A;
+        }
+        QSlider::groove:horizontal {
+            border: 1px solid #5A5A5A;
+            height: 8px;
+            background: #3A3A3A;
+        }
+        QSlider::handle:horizontal {
+            background: #5A5A5A;
+            border: 1px solid #5A5A5A;
+            width: 18px;
+            margin: -2px 0;
+            border-radius: 3px;
+        }
+        QListWidget {
+            background-color: #3A3A3A;
+            color: #FFFFFF;
+        }
+        QLabel {
+            color: #FFFFFF;
+        }
+        """
 
 class CustomListWidget(QListWidget):
     def __init__(self, parent=None):
