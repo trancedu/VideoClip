@@ -222,10 +222,10 @@ class VideoPlayerApp(QWidget):
         # Check if the event is a key press event
         elif event.type() == QEvent.KeyPress:
             # Handle left and right arrow keys globally
-            if event.key() == Qt.Key_Right:
+            if event.key() == Qt.Key_Right or event.key() == Qt.Key_K:
                 self.skip(3)  # Fine-tuned seeking
                 return True  # Event handled
-            elif event.key() == Qt.Key_Left:
+            elif event.key() == Qt.Key_Left or event.key() == Qt.Key_J:
                 self.skip(-3)  # Fine-tuned seeking
                 return True  # Event handled
         return super().eventFilter(source, event)
