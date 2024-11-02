@@ -37,6 +37,9 @@ class VideoPlayerApp(QWidget):
         self.position_saved = False  # Flag to check if the position has been saved
         self.loop_enabled = False  # Flag to check if looping is enabled
 
+        # Initialize mode
+        self.audio_mode = False  # Start in video mode
+
         # Create VLC instance and media player
         self.instance = vlc.Instance()
         self.media_player = self.instance.media_player_new()
@@ -171,6 +174,11 @@ class VideoPlayerApp(QWidget):
         self.return_button.clicked.connect(self.return_to_main_video)
         self.return_button.setEnabled(False)
         control_layout.addWidget(self.return_button)
+
+        # Toggle Video/Audio Mode Button
+        self.toggle_mode_button = QPushButton("Audio/Video Mode")
+        self.toggle_mode_button.clicked.connect(self.toggle_video_audio_mode)
+        control_layout.addWidget(self.toggle_mode_button)
 
         # Add control layout to main layout
         main_layout.addLayout(control_layout, 1)  # 1/8 of the width
@@ -484,6 +492,18 @@ class VideoPlayerApp(QWidget):
             if isinstance(clip_data, dict) and 'positions' in clip_data:
                 start, end = clip_data['positions']
                 self.favorites_list.addItem(f"Clip {i + 1}: {start:.2f}s - {end:.2f}s")
+
+    def toggle_video_audio_mode(self):
+        """Toggle between video and audio mode."""
+        self.audio_mode = not self.audio_mode
+        if self.audio_mode:
+            self.video_widget.hide()
+            self.toggle_mode_button.setText("Switch to Video Mode")
+            self.feedback_label.setText("Audio mode enabled.")
+        else:
+            self.video_widget.show()
+            self.toggle_mode_button.setText("Switch to Audio Mode")
+            self.feedback_label.setText("Video mode enabled.")
 
 class CustomListWidget(QListWidget):
     def __init__(self, parent=None):
