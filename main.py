@@ -450,15 +450,19 @@ class VideoPlayerApp(QWidget):
 
     def next_clip(self):
         current_row = self.favorites_list.currentRow()
+        next_row = 0
         if current_row < self.favorites_list.count() - 1:
-            self.favorites_list.setCurrentRow(current_row + 1)
-            self.play_favorite()
-
+            next_row = current_row + 1
+        self.favorites_list.setCurrentRow(next_row)
+        self.play_favorite()
+ 
     def previous_clip(self):
         current_row = self.favorites_list.currentRow()
+        prev_row = self.favorites_list.count() - 1
         if current_row > 0:
-            self.favorites_list.setCurrentRow(current_row - 1)
-            self.play_favorite()
+            prev_row = current_row - 1
+        self.favorites_list.setCurrentRow(prev_row)
+        self.play_favorite()
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
