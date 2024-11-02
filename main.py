@@ -472,6 +472,8 @@ class VideoPlayerApp(QWidget):
             self.previous_clip()
         elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
             self.play_favorite()
+        elif event.key() == Qt.Key_A:
+            self.toggle_video_audio_mode()  # Toggle video/audio mode with 'A' key
 
     def slider_clicked(self):
         # Reset the current clip end when the slider is clicked
