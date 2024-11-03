@@ -510,6 +510,8 @@ class VideoPlayerApp(QWidget):
             self.play_favorite()
         elif event.key() == Qt.Key_A:
             self.toggle_video_audio_mode()  # Toggle video/audio mode with 'A' key
+        elif event.key() == Qt.Key_Q:
+            self.toggle_half_speed()  # Toggle half speed with 'Q' key
 
     def slider_clicked(self):
         # Reset the current clip end when the slider is clicked
@@ -634,6 +636,16 @@ class VideoPlayerApp(QWidget):
         speed_text = self.speed_combo.currentText()
         self.playback_speed = float(speed_text.replace("x", ""))
         self.media_player.set_rate(self.playback_speed)
+        self.feedback_label.setText(f"Playback speed set to {self.playback_speed}x")
+
+    def toggle_half_speed(self):
+        """Toggle between half speed and normal speed."""
+        if self.playback_speed != 0.5:
+            self.playback_speed = 0.5
+        else:
+            self.playback_speed = 1.0
+        self.media_player.set_rate(self.playback_speed)
+        self.speed_combo.setCurrentText(f"{self.playback_speed}x")
         self.feedback_label.setText(f"Playback speed set to {self.playback_speed}x")
 
 class CustomListWidget(QListWidget):
