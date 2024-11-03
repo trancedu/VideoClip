@@ -322,7 +322,7 @@ class VideoPlayerApp(QWidget):
 
     def start_clip(self):
         if self.media_player.get_length() > 0:
-            self.current_clip_start = self.media_player.get_time() / 1000.0  # seconds
+            self.current_clip_start = max(0, self.media_player.get_time() / 1000.0 - 0.5) # seconds
             self.feedback_label.setText("Clip start point set.")
 
     def save_clip(self):
@@ -427,8 +427,8 @@ class VideoPlayerApp(QWidget):
         if self.current_clip_end is not None:  # Ensure current_clip_end is set
             if current_position >= int(self.current_clip_end * 1000):  # Convert to milliseconds
                 if self.loop_enabled:
-                    # Apply an additional 500ms buffer when looping
-                    adjusted_start = max(0, self.current_clip_start * 1000 - 1000)
+                    # Apply an additional 200ms buffer when looping
+                    adjusted_start = max(0, self.current_clip_start * 1000 - 100)
                     self.media_player.set_time(int(adjusted_start))
                     self.media_player.play()
                 else:
