@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QTimer, QEvent
 from PyQt5.QtGui import QMouseEvent
+import platform
 
 class VideoPlayerApp(QWidget):
     def __init__(self, debug=False, debug_video_path=None, config_dir=None):
@@ -699,10 +700,13 @@ class ClickableSlider(QSlider):
 if __name__ == "__main__":
     debug_mode = True  # Set this to True to enable debug mode
     home_path = os.path.expanduser("~")
-    debug_video_path = os.path.join(home_path, r"Videos\S04.1080p.中英字幕\Fresh.Off.the.Boat.S04E01.1080p.AMZN.WEB.mp4")
+    debug_video_path = os.path.join(home_path, r"Videos/S04.1080p.中英字幕/Fresh.Off.the.Boat.S04E01.1080p.AMZN.WEB.mp4")
 
     # Define the config path
-    config_dir = os.path.join(home_path, r"OneDrive\Projects\config")
+    if platform.system() == "Darwin":  # Darwin is the system name for macOS
+        config_dir = os.path.join(home_path, "Library/CloudStorage/OneDrive-Personal/Projects/config")
+    else:
+        config_dir = os.path.join(home_path, r"OneDrive/Projects/config")
 
     app = QApplication(sys.argv)
     window = VideoPlayerApp(debug=debug_mode, debug_video_path=debug_video_path, config_dir=config_dir)
