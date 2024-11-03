@@ -5,7 +5,7 @@ import vlc
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget,
     QFileDialog, QLabel, QSlider, QHBoxLayout, QToolTip, QInputDialog, QMenu,
-    QStyle, QComboBox  # Add this import
+    QStyle, QComboBox, QTreeWidget, QTreeWidgetItem  # Add this import
 )
 from PyQt5.QtCore import Qt, QTimer, QEvent
 from PyQt5.QtGui import QMouseEvent
@@ -56,6 +56,9 @@ class VideoPlayerApp(QWidget):
         self.media_player.video_set_mouse_input(False)
         self.media_player.video_set_key_input(False)
         
+        # Initialize a dictionary to store video clips
+        self.video_clips = {}
+
         # Create widgets
         self.create_widgets()
 
@@ -202,6 +205,16 @@ class VideoPlayerApp(QWidget):
         self.speed_combo.setCurrentText("1x")
         self.speed_combo.currentIndexChanged.connect(self.change_speed)
         control_layout.addWidget(self.speed_combo)
+
+        # Load Config Files Button
+        self.load_configs_button = QPushButton("Load Config Files")
+        self.load_configs_button.clicked.connect(self.load_config_files)
+        control_layout.addWidget(self.load_configs_button)
+
+        # Video Clips Tree
+        self.video_clips_tree = QTreeWidget()
+        self.video_clips_tree.setHeaderLabels(["Video"])
+        control_layout.addWidget(self.video_clips_tree)
 
         # Add control layout to main layout
         main_layout.addLayout(control_layout, 1)  # 1/8 of the width
@@ -648,6 +661,31 @@ class VideoPlayerApp(QWidget):
         self.media_player.set_rate(self.playback_speed)
         self.speed_combo.setCurrentText(f"{self.playback_speed}x")
         self.feedback_label.setText(f"Playback speed set to {self.playback_speed}x")
+
+    def load_config_files(self):
+        """Load all config files and list videos with their clips."""
+        self.video_clips_tree.clear()  # Clear existing items
+        self.video_clips = {}  # Reset the video clips dictionary
+
+        # Iterate over all JSON files in the config directory
+        for file_name in os.listdir(self.config_dir):
+            if file_name.endswith('.json'):
+                video_name = file_name[:-5]  # Remove the '.json' extension
+                file_path = os.path.join(self.config_dir, file_name)
+
+                with open(file_path, 'r') as f:
+                    clips = json.load(f)
+
+                # Add video and clips to the tree
+                video_item = QTreeWidgetItem(self.video_clips_tree, [video_name])
+                for clip in clips:
+                    start, end = clip['positions']
+                    clip_item = QTreeWidgetItem(video_item, [f"Clip: {start:.2f}s - {end:.2f}s"])
+                    video_item.addChild(clip_item)
+
+                self.video_clips[video_name] = clips
+
+        self.video_clips_tree.expandAll()  # Expand all items initially
 
 class CustomListWidget(QListWidget):
     def __init__(self, parent=None):
