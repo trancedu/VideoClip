@@ -5,7 +5,7 @@ import vlc
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget,
     QFileDialog, QLabel, QSlider, QHBoxLayout, QToolTip, QInputDialog, QMenu,
-    QStyle  # Add this import
+    QStyle, QComboBox  # Add this import
 )
 from PyQt5.QtCore import Qt, QTimer, QEvent
 from PyQt5.QtGui import QMouseEvent
@@ -43,6 +43,9 @@ class VideoPlayerApp(QWidget):
         # Initialize dark mode
         self.dark_mode = True  # Start in dark mode
         self.setStyleSheet(self.dark_mode_stylesheet())  # Apply dark mode stylesheet
+
+        # Initialize playback speed
+        self.playback_speed = 1.0  # Default speed is 1x
 
         # Create VLC instance and media player
         self.instance = vlc.Instance()
@@ -188,6 +191,16 @@ class VideoPlayerApp(QWidget):
         self.toggle_dark_mode_button = QPushButton("Dark/Light Mode")
         self.toggle_dark_mode_button.clicked.connect(self.toggle_dark_mode)
         control_layout.addWidget(self.toggle_dark_mode_button)
+
+        # Playback speed controls
+        self.speed_label = QLabel("Speed:")
+        control_layout.addWidget(self.speed_label)
+
+        self.speed_combo = QComboBox()
+        self.speed_combo.addItems(["0.25x", "0.5x", "0.75x", "1x", "1.25x", "1.5x", "2x"])
+        self.speed_combo.setCurrentText("1x")
+        self.speed_combo.currentIndexChanged.connect(self.change_speed)
+        control_layout.addWidget(self.speed_combo)
 
         # Add control layout to main layout
         main_layout.addLayout(control_layout, 1)  # 1/8 of the width
@@ -396,6 +409,10 @@ class VideoPlayerApp(QWidget):
                 # Set the media to the main video and play from the start to end positions
                 self.current_clip_start, self.current_clip_end = clip_data['positions']  # Set the current clip start and end
                 self.media_player.set_time(int(self.current_clip_start * 1000))  # Convert to milliseconds
+
+                # Reapply the current playback speed
+                self.media_player.set_rate(self.playback_speed)
+
                 self.media_player.play()
                 self.is_playing = True
                 self.return_button.setEnabled(True)
@@ -611,6 +628,13 @@ class VideoPlayerApp(QWidget):
             color: #FFFFFF;
         }
         """
+
+    def change_speed(self):
+        # Get the selected speed from the combo box
+        speed_text = self.speed_combo.currentText()
+        self.playback_speed = float(speed_text.replace("x", ""))
+        self.media_player.set_rate(self.playback_speed)
+        self.feedback_label.setText(f"Playback speed set to {self.playback_speed}x")
 
 class CustomListWidget(QListWidget):
     def __init__(self, parent=None):
