@@ -671,23 +671,25 @@ class VideoPlayerApp(QWidget):
         self.video_clips_tree.clear()  # Clear existing items
         self.video_clips = {}  # Reset the video clips dictionary
 
-        # Iterate over all JSON files in the config directory
-        for file_name in os.listdir(self.config_dir):
-            if file_name.endswith('.json'):
-                video_name = file_name[:-5]  # Remove the '.json' extension
-                file_path = os.path.join(self.config_dir, file_name)
+        # Get all JSON files in the config directory and sort them by name
+        json_files = sorted([f for f in os.listdir(self.config_dir) if f.endswith('.json')])
 
-                with open(file_path, 'r') as f:
-                    clips = json.load(f)
+        # Iterate over sorted JSON files
+        for file_name in json_files:
+            video_name = file_name[:-5]  # Remove the '.json' extension
+            file_path = os.path.join(self.config_dir, file_name)
 
-                # Add video and clips to the tree
-                video_item = QTreeWidgetItem(self.video_clips_tree, [video_name])
-                for clip in clips:
-                    start, end = clip['positions']
-                    clip_item = QTreeWidgetItem(video_item, [f"Clip: {start:.2f}s - {end:.2f}s"])
-                    video_item.addChild(clip_item)
+            with open(file_path, 'r') as f:
+                clips = json.load(f)
 
-                self.video_clips[video_name] = clips
+            # Add video and clips to the tree
+            video_item = QTreeWidgetItem(self.video_clips_tree, [video_name])
+            for clip in clips:
+                start, end = clip['positions']
+                clip_item = QTreeWidgetItem(video_item, [f"Clip: {start:.2f}s - {end:.2f}s"])
+                video_item.addChild(clip_item)
+
+            self.video_clips[video_name] = clips
 
         self.video_clips_tree.expandAll()  # Expand all items initially
 
