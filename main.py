@@ -579,7 +579,7 @@ class VideoPlayerApp(QWidget):
             color: #000000;
         }
         QPushButton {
-            font-size: 30px;  /* Adjusted font size */
+            font-size: 20px;  /* Adjusted font size */
             background-color: #F0F0F0;
             color: #000000;
             border: 1px solid #CCCCCC;
@@ -619,7 +619,7 @@ class VideoPlayerApp(QWidget):
             background-color: #4A4A4A;
             color: #FFFFFF;
             border: 1px solid #5A5A5A;
-            font-size: 30px;  /* Adjusted font size */
+            font-size: 20px;  /* Adjusted font size */
         }
         QPushButton:hover {
             background-color: #5A5A5A;
