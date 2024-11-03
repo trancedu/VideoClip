@@ -12,7 +12,7 @@ from PyQt5.QtGui import QMouseEvent
 import platform
 
 class VideoPlayerApp(QWidget):
-    def __init__(self, debug=False, debug_video_path=None, config_dir=None):
+    def __init__(self, debug=False, debug_video_path=None, config_dir=None, base_video_dir=None):
         super().__init__()
         self.setWindowTitle("English Listening Practice")
 
@@ -60,7 +60,7 @@ class VideoPlayerApp(QWidget):
         self.video_clips = {}
 
         # Define the base video directory
-        self.base_video_dir = os.path.join(os.path.expanduser("~"), "Videos", "S04.1080p.中英字幕")
+        self.base_video_dir = base_video_dir
 
         # Create widgets
         self.create_widgets()
@@ -702,8 +702,11 @@ class VideoPlayerApp(QWidget):
             # Construct the full video path
             video_path = os.path.join(self.base_video_dir, video_name)
 
-            # Load and play the clip
-            self.load_video(video_path=video_path)
+            # Check if the current video is the same as the new video
+            if self.video_path != video_path:
+                self.load_video(video_path=video_path)
+
+            # Play the clip
             self.play_clip(start, end)
 
     def parse_clip_text(self, clip_text):
@@ -790,8 +793,12 @@ if __name__ == "__main__":
 
     # Define the video and config path
     hardcoded_video_path = r"Videos/S04.1080p.中英字幕/Fresh.Off.the.Boat.S04E01.1080p.AMZN.WEB.mp4"
+    hardcoded_base_video_dir = r"Videos/S04.1080p.中英字幕"
     mac_config_path = "Library/CloudStorage/OneDrive-Personal/Projects/config"
     win_config_path = r"OneDrive/Projects/config"
+
+    # Define the base video directory
+    base_video_dir = os.path.join(home_path, hardcoded_base_video_dir)
 
     debug_video_path = os.path.join(home_path, hardcoded_video_path)
     if platform.system() == "Darwin":  # Darwin is the system name for macOS
@@ -802,6 +809,6 @@ if __name__ == "__main__":
         raise ValueError(f"Unsupported system: {platform.system()}")
 
     app = QApplication(sys.argv)
-    window = VideoPlayerApp(debug=debug_mode, debug_video_path=debug_video_path, config_dir=config_dir)
+    window = VideoPlayerApp(debug=debug_mode, debug_video_path=debug_video_path, config_dir=config_dir, base_video_dir=base_video_dir)
     window.show()
     sys.exit(app.exec_())
