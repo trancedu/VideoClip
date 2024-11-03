@@ -59,6 +59,9 @@ class VideoPlayerApp(QWidget):
         # Initialize a dictionary to store video clips
         self.video_clips = {}
 
+        # Define the base video directory
+        self.base_video_dir = os.path.join(os.path.expanduser("~"), "Videos", "S04.1080p.中英字幕")
+
         # Create widgets
         self.create_widgets()
 
@@ -214,6 +217,7 @@ class VideoPlayerApp(QWidget):
         # Video Clips Tree
         self.video_clips_tree = QTreeWidget()
         self.video_clips_tree.setHeaderLabels(["Video"])
+        self.video_clips_tree.itemClicked.connect(self.on_clip_selected)  # Connect item click event
         control_layout.addWidget(self.video_clips_tree)
 
         # Add control layout to main layout
@@ -686,6 +690,51 @@ class VideoPlayerApp(QWidget):
                 self.video_clips[video_name] = clips
 
         self.video_clips_tree.expandAll()  # Expand all items initially
+
+    def on_clip_selected(self, item, column):
+        """Handle the event when a clip is selected in the tree."""
+        parent = item.parent()
+        if parent is not None:  # Ensure the item is a clip, not a video
+            video_name = parent.text(0)
+            clip_text = item.text(0)
+            start, end = self.parse_clip_text(clip_text)
+
+            # Construct the full video path
+            video_path = os.path.join(self.base_video_dir, video_name)
+
+            # Load and play the clip
+            self.load_video(video_path=video_path)
+            self.play_clip(start, end)
+
+    def parse_clip_text(self, clip_text):
+        """Parse the clip text to extract start and end times."""
+        # Example clip text: "Clip: 10.00s - 20.00s"
+        parts = clip_text.split(": ")[1].split(" - ")
+        start = float(parts[0].replace("s", ""))
+        end = float(parts[1].replace("s", ""))
+        return start, end
+
+    def play_clip(self, start, end):
+        """Play the video from start to end time."""
+        if self.video_path:
+            # Ensure media is loaded
+            if not self.media_player.get_media():
+                media = self.instance.media_new(self.video_path)
+                self.media_player.set_media(media)
+
+            # Set the media to the main video and play from the start to end positions
+            self.current_clip_start = start
+            self.current_clip_end = end
+            self.media_player.set_time(int(start * 1000))  # Convert to milliseconds
+
+            # Reapply the current playback speed
+            self.media_player.set_rate(self.playback_speed)
+
+            self.media_player.play()
+            self.is_playing = True
+            self.feedback_label.setText(f"Playing clip: {start:.2f}s - {end:.2f}s")
+        else:
+            self.feedback_label.setText("Video file not found!")
 
 class CustomListWidget(QListWidget):
     def __init__(self, parent=None):
