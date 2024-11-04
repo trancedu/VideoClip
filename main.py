@@ -823,21 +823,12 @@ class CustomListWidget(QListWidget):
         self.itemDoubleClicked.connect(self.parent().play_favorite)  # Connect double-click to play_favorite
 
     def keyPressEvent(self, event):
-        # Propagate the event to the parent widget
-        if event.key() in (Qt.Key_Space, Qt.Key_S, Qt.Key_E):
-            self.parent().keyPressEvent(event)
-        elif event.key() == Qt.Key_L:
+        if event.key() == Qt.Key_L:
             self.parent().toggle_loop()
-        elif event.key() == Qt.Key_N or event.key() == Qt.Key_Down:
-            self.parent().next_clip()
-        elif event.key() == Qt.Key_P or event.key() == Qt.Key_Up:
-            self.parent().previous_clip()
         elif event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
             self.parent().delete_clip()
-        elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-            self.parent().play_favorite()
         else:
-            super().keyPressEvent(event)
+            self.parent().keyPressEvent(event)
 
 class ClickableVideoWidget(QWidget):
     def __init__(self, parent=None):
@@ -870,23 +861,7 @@ class CustomTreeWidget(QTreeWidget):
         super().__init__(parent)
 
     def keyPressEvent(self, event):
-        if event.key() in (Qt.Key_N, Qt.Key_Down):
-            self.parent().navigate_tree(1)
-        elif event.key() in (Qt.Key_P, Qt.Key_Up):
-            self.parent().navigate_tree(-1)
-        elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-            current_item = self.currentItem()
-            if current_item and not current_item.parent():  # Check if it's a top-level item (video)
-                if current_item.isExpanded():
-                    self.collapseItem(current_item)
-                else:
-                    self.expandItem(current_item)
-            else:
-                self.parent().play_selected_clip()  # Play the selected clip if it's not a video
-        elif event.key() == Qt.Key_Space:
-            self.parent().toggle_play_pause()
-        else:
-            super().keyPressEvent(event)
+        self.parent().keyPressEvent(event)
 
 if __name__ == "__main__":
     debug_mode = True  # Set this to True to enable debug mode
