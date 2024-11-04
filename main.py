@@ -694,6 +694,22 @@ class VideoPlayerApp(QWidget):
         QLabel {
             color: #FFFFFF;
         }
+        QTreeWidget {
+            background-color: #3A3A3A;
+            color: #FFFFFF;  /* Set text color for QTreeWidget */
+        }
+        QTreeWidget::item {
+            background-color: #3A3A3A;  /* Set background color for items */
+            color: #FFFFFF;  /* Ensure text color for items */
+        }
+        QTreeWidget::item:selected {
+            background-color: #5A5A5A;  /* Set background color for selected items */
+        }
+        QHeaderView::section {
+            background-color: #3A3A3A;  /* Set header background color */
+            color: #FFFFFF;  /* Set header text color */
+            border: 1px solid #5A5A5A;
+        }
         """
 
     def change_speed(self):
