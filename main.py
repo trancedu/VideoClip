@@ -724,6 +724,12 @@ class VideoPlayerApp(QWidget):
         # Iterate over sorted JSON files
         for file_name in json_files:
             video_name = file_name[:-5]  # Remove the '.json' extension
+            video_path = os.path.join(self.base_video_dir, video_name)
+
+            # Check if the video file exists
+            if not os.path.exists(video_path):
+                continue  # Skip this config file if the video file does not exist
+
             file_path = os.path.join(self.config_dir, file_name)
 
             with open(file_path, 'r') as f:
@@ -738,7 +744,7 @@ class VideoPlayerApp(QWidget):
 
             self.video_clips[video_name] = clips
 
-        self.video_clips_tree.expandAll()  # Expand all items initially
+        self.video_clips_tree.collapseAll()  # Collapse all items initially
 
     def on_clip_selected(self, item, column):
         """Handle the event when a clip is selected in the tree."""
