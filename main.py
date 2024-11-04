@@ -179,7 +179,7 @@ class VideoPlayerApp(QWidget):
         control_layout.addWidget(self.feedback_label)
 
         # Video Clips Tree
-        self.video_clips_tree = QTreeWidget()
+        self.video_clips_tree = CustomTreeWidget()
         self.video_clips_tree.setHeaderLabels(["Video"])
         self.video_clips_tree.itemClicked.connect(self.on_clip_selected)  # Connect item click event
         self.video_clips_tree.hide()  # Initially hide the tree
@@ -507,33 +507,62 @@ class VideoPlayerApp(QWidget):
         self.play_favorite()
 
     def keyPressEvent(self, event):
-        if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
-            self.delete_clip()
-        elif event.key() == Qt.Key_Right:
-            self.skip(3)  # Fine-tuned seeking
-        elif event.key() == Qt.Key_Left:
-            self.skip(-3)  # Fine-tuned seeking
-        elif event.key() == Qt.Key_Space:
-            if self.is_playing:
-                self.pause_video()
-            else:
-                self.play_video()
-        elif event.key() == Qt.Key_S:
-            self.start_clip()
-        elif event.key() == Qt.Key_E:
-            self.save_clip()
-        elif event.key() == Qt.Key_L:
-            self.toggle_loop()
-        elif event.key() == Qt.Key_N or event.key() == Qt.Key_Down:
-            self.next_clip()
-        elif event.key() == Qt.Key_P or event.key() == Qt.Key_Up:
-            self.previous_clip()
-        elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-            self.play_favorite()
-        elif event.key() == Qt.Key_A:
-            self.toggle_video_audio_mode()  # Toggle video/audio mode with 'A' key
-        elif event.key() == Qt.Key_Q:
-            self.toggle_half_speed()  # Toggle half speed with 'Q' key
+        if self.single_video_mode:
+            # Existing single video mode shortcuts
+            if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
+                self.delete_clip()
+            elif event.key() == Qt.Key_Right:
+                self.skip(3)  # Fine-tuned seeking
+            elif event.key() == Qt.Key_Left:
+                self.skip(-3)  # Fine-tuned seeking
+            elif event.key() == Qt.Key_Space:
+                if self.is_playing:
+                    self.pause_video()
+                else:
+                    self.play_video()
+            elif event.key() == Qt.Key_S:
+                self.start_clip()
+            elif event.key() == Qt.Key_E:
+                self.save_clip()
+            elif event.key() == Qt.Key_L:
+                self.toggle_loop()
+            elif event.key() == Qt.Key_N or event.key() == Qt.Key_Down:
+                self.next_clip()
+            elif event.key() == Qt.Key_P or event.key() == Qt.Key_Up:
+                self.previous_clip()
+            elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+                self.play_favorite()
+            elif event.key() == Qt.Key_A:
+                self.toggle_video_audio_mode()  # Toggle video/audio mode with 'A' key
+            elif event.key() == Qt.Key_Q:
+                self.toggle_half_speed()  # Toggle half speed with 'Q' key
+        else:
+            # All videos mode shortcuts
+            if event.key() in (Qt.Key_N, Qt.Key_Down):
+                self.navigate_tree(1)  # Move down in the tree
+            elif event.key() in (Qt.Key_P, Qt.Key_Up):
+                self.navigate_tree(-1)  # Move up in the tree
+            elif event.key() in (Qt.Key_Return, Qt.Key_Enter):
+                self.play_selected_clip()  # Play the selected clip
+
+    def navigate_tree(self, direction):
+        """Navigate the video clips tree."""
+        current_item = self.video_clips_tree.currentItem()
+        if current_item:
+            if direction > 0:  # Move down
+                next_item = self.video_clips_tree.itemBelow(current_item)
+            else:  # Move up
+                next_item = self.video_clips_tree.itemAbove(current_item)
+
+            if next_item:
+                self.video_clips_tree.setCurrentItem(next_item)
+                self.play_selected_clip()  # Play the clip after navigating
+
+    def play_selected_clip(self):
+        """Play the currently selected clip in the tree."""
+        current_item = self.video_clips_tree.currentItem()
+        if current_item and current_item.parent():  # Ensure it's a clip, not a video
+            self.on_clip_selected(current_item, 0)
 
     def slider_clicked(self):
         # Reset the current clip end when the slider is clicked
@@ -753,12 +782,14 @@ class VideoPlayerApp(QWidget):
             self.favorites_list.show()
             self.toggle_video_list_button.setText("Single/All Videos")
             self.feedback_label.setText("Single video mode enabled.")
+            self.favorites_list.setFocus()  # Set focus to the favorites list
         else:
             self.favorites_list.hide()
             self.video_clips_tree.show()
             self.load_config_files()  # Load the config files when switching to all videos mode
             self.toggle_video_list_button.setText("Single/All Videos")
             self.feedback_label.setText("All videos mode enabled.")
+            self.video_clips_tree.setFocus()  # Set focus to the video clips tree
 
 class CustomListWidget(QListWidget):
     def __init__(self, parent=None):
@@ -807,6 +838,21 @@ class ClickableSlider(QSlider):
             self.setValue(new_value)
             self.parent().set_position(new_value)
         super().mousePressEvent(event)
+
+class CustomTreeWidget(QTreeWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def keyPressEvent(self, event):
+        # Propagate the event to the parent widget
+        if event.key() in (Qt.Key_N, Qt.Key_Down):
+            self.parent().navigate_tree(1)
+        elif event.key() in (Qt.Key_P, Qt.Key_Up):
+            self.parent().navigate_tree(-1)
+        elif event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            self.parent().play_selected_clip()
+        else:
+            super().keyPressEvent(event)
 
 if __name__ == "__main__":
     debug_mode = True  # Set this to True to enable debug mode
