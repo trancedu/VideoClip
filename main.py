@@ -546,7 +546,14 @@ class VideoPlayerApp(QWidget):
             if self.single_video_mode:
                 self.play_favorite()
             else:
-                self.play_selected_clip()  # Play the selected clip
+                current_item = self.video_clips_tree.currentItem()
+                if current_item and not current_item.parent():  # Check if it's a top-level item (video)
+                    if current_item.isExpanded():
+                        self.video_clips_tree.collapseItem(current_item)
+                    else:
+                        self.video_clips_tree.expandItem(current_item)
+                else:
+                    self.play_selected_clip()  # Play the selected clip if it's not a video
         elif key == Qt.Key_A:
             self.toggle_video_audio_mode()  # Toggle video/audio mode with 'A' key
         elif key == Qt.Key_Q:
@@ -863,13 +870,19 @@ class CustomTreeWidget(QTreeWidget):
         super().__init__(parent)
 
     def keyPressEvent(self, event):
-        # Propagate the event to the parent widget
         if event.key() in (Qt.Key_N, Qt.Key_Down):
             self.parent().navigate_tree(1)
         elif event.key() in (Qt.Key_P, Qt.Key_Up):
             self.parent().navigate_tree(-1)
-        elif event.key() in (Qt.Key_Return, Qt.Key_Enter):
-            self.parent().play_selected_clip()
+        elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+            current_item = self.currentItem()
+            if current_item and not current_item.parent():  # Check if it's a top-level item (video)
+                if current_item.isExpanded():
+                    self.collapseItem(current_item)
+                else:
+                    self.expandItem(current_item)
+            else:
+                self.parent().play_selected_clip()  # Play the selected clip if it's not a video
         elif event.key() == Qt.Key_Space:
             self.parent().toggle_play_pause()
         else:
