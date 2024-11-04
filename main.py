@@ -423,30 +423,18 @@ class VideoPlayerApp(QWidget):
         selected_row = self.favorites_list.currentRow()
         if selected_row >= 0:
             clip_data = self.favorites[selected_row]
-            if self.video_path:
-                # Save the current position of the main video only if not already saved
-                if not self.position_saved:
-                    self.main_video_position = self.media_player.get_time()
-                    self.position_saved = True
+            # Save the current position of the main video only if not already saved
+            if not self.position_saved:
+                self.main_video_position = self.media_player.get_time()
+                self.position_saved = True
 
-                # Ensure media is loaded
-                if not self.media_player.get_media():
-                    media = self.instance.media_new(self.video_path)
-                    self.media_player.set_media(media)
+            # Extract start and end positions from the clip data
+            start, end = clip_data['positions']
 
-                # Set the media to the main video and play from the start to end positions
-                self.current_clip_start, self.current_clip_end = clip_data['positions']  # Set the current clip start and end
-                self.media_player.set_time(int(self.current_clip_start * 1000))  # Convert to milliseconds
+            # Call play_clip with the start and end positions
+            self.play_clip(start, end)
 
-                # Reapply the current playback speed
-                self.media_player.set_rate(self.playback_speed)
-
-                self.media_player.play()
-                self.is_playing = True
-                self.return_button.setEnabled(True)
-                self.feedback_label.setText(f"Playing clip {selected_row + 1}")
-            else:
-                self.feedback_label.setText("Main video file not found!")
+            self.return_button.setEnabled(True)
         else:
             self.feedback_label.setText("No clip selected.")
 
