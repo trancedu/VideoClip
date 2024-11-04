@@ -367,21 +367,54 @@ class VideoPlayerApp(QWidget):
 
                 # Update the favorites list widget
                 self.update_favorites_list()
-                
-                self.feedback_label.setText("Clip positions saved!")
-                
+
                 # Save to JSON file
                 self.save_clips_to_file()
 
                 # Find the index of the newly added clip
                 new_clip_index = self.favorites.index(clip_data)
 
-                # Select the newly added clip
-                self.favorites_list.setCurrentRow(new_clip_index)
+                if not self.single_video_mode:
+                    # Update the video clips tree
+                    self.update_video_clips_tree()
+
+                    # Select the newly added clip in the video clips tree
+                    self.select_clip_in_tree(new_clip_index)
+                else:
+                    # Select the newly added clip in the favorites list
+                    self.favorites_list.setCurrentRow(new_clip_index)
+
+                self.feedback_label.setText("Clip positions saved!")
             else:
                 self.feedback_label.setText("Invalid clip duration.")
         else:
             self.feedback_label.setText("Set the clip start point first.")
+
+    def select_clip_in_tree(self, clip_index):
+        """Select the newly added clip in the video clips tree."""
+        video_name = os.path.basename(self.video_path)
+        for i in range(self.video_clips_tree.topLevelItemCount()):
+            video_item = self.video_clips_tree.topLevelItem(i)
+            if video_item.text(0) == video_name:
+                clip_item = video_item.child(clip_index)
+                if clip_item:
+                    self.video_clips_tree.setCurrentItem(clip_item)
+                break
+
+    def update_video_clips_tree(self):
+        """Update the video clips tree with the current clips for the loaded video."""
+        video_name = os.path.basename(self.video_path)
+        for i in range(self.video_clips_tree.topLevelItemCount()):
+            video_item = self.video_clips_tree.topLevelItem(i)
+            if video_item.text(0) == video_name:
+                # Clear existing clips
+                video_item.takeChildren()
+                # Add updated clips
+                for clip in self.favorites:
+                    start, end = clip['positions']
+                    clip_item = QTreeWidgetItem(video_item, [f"Clip: {start:.2f}s - {end:.2f}s"])
+                    video_item.addChild(clip_item)
+                break
 
     def sort_clips(self):
         """Sort the favorites list by start time."""
