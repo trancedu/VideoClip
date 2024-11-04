@@ -62,6 +62,9 @@ class VideoPlayerApp(QWidget):
         # Define the base video directory
         self.base_video_dir = base_video_dir
 
+        # Initialize mode for displaying videos
+        self.single_video_mode = True  # Start in single video mode
+
         # Create widgets
         self.create_widgets()
 
@@ -166,9 +169,21 @@ class VideoPlayerApp(QWidget):
         self.save_clip_button.setEnabled(False)
         control_layout.addWidget(self.save_clip_button)
 
+        # Single/All Videos Button
+        self.toggle_video_list_button = QPushButton("Single/All Videos")
+        self.toggle_video_list_button.clicked.connect(self.toggle_video_list)
+        control_layout.addWidget(self.toggle_video_list_button)
+
         # Feedback label
         self.feedback_label = QLabel("")
         control_layout.addWidget(self.feedback_label)
+
+        # Video Clips Tree
+        self.video_clips_tree = QTreeWidget()
+        self.video_clips_tree.setHeaderLabels(["Video"])
+        self.video_clips_tree.itemClicked.connect(self.on_clip_selected)  # Connect item click event
+        self.video_clips_tree.hide()  # Initially hide the tree
+        control_layout.addWidget(self.video_clips_tree)
 
         # Favorites
         self.favorites_list = CustomListWidget(self)  # Use the custom list widget
@@ -208,17 +223,6 @@ class VideoPlayerApp(QWidget):
         self.speed_combo.setCurrentText("1x")
         self.speed_combo.currentIndexChanged.connect(self.change_speed)
         control_layout.addWidget(self.speed_combo)
-
-        # Load Config Files Button
-        self.load_configs_button = QPushButton("Load Config Files")
-        self.load_configs_button.clicked.connect(self.load_config_files)
-        control_layout.addWidget(self.load_configs_button)
-
-        # Video Clips Tree
-        self.video_clips_tree = QTreeWidget()
-        self.video_clips_tree.setHeaderLabels(["Video"])
-        self.video_clips_tree.itemClicked.connect(self.on_clip_selected)  # Connect item click event
-        control_layout.addWidget(self.video_clips_tree)
 
         # Add control layout to main layout
         main_layout.addLayout(control_layout, 1)  # 1/8 of the width
@@ -740,6 +744,21 @@ class VideoPlayerApp(QWidget):
             self.feedback_label.setText(f"Playing clip: {start:.2f}s - {end:.2f}s")
         else:
             self.feedback_label.setText("Video file not found!")
+
+    def toggle_video_list(self):
+        """Toggle between single video mode and all videos mode."""
+        self.single_video_mode = not self.single_video_mode
+        if self.single_video_mode:
+            self.video_clips_tree.hide()
+            self.favorites_list.show()
+            self.toggle_video_list_button.setText("Single/All Videos")
+            self.feedback_label.setText("Single video mode enabled.")
+        else:
+            self.favorites_list.hide()
+            self.video_clips_tree.show()
+            self.load_config_files()  # Load the config files when switching to all videos mode
+            self.toggle_video_list_button.setText("Single/All Videos")
+            self.feedback_label.setText("All videos mode enabled.")
 
 class CustomListWidget(QListWidget):
     def __init__(self, parent=None):
