@@ -507,43 +507,44 @@ class VideoPlayerApp(QWidget):
         self.play_favorite()
 
     def keyPressEvent(self, event):
-        if self.single_video_mode:
-            # Existing single video mode shortcuts
-            if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
-                self.delete_clip()
-            elif event.key() == Qt.Key_Right:
-                self.skip(3)  # Fine-tuned seeking
-            elif event.key() == Qt.Key_Left:
-                self.skip(-3)  # Fine-tuned seeking
-            elif event.key() == Qt.Key_Space:
-                if self.is_playing:
-                    self.pause_video()
-                else:
-                    self.play_video()
-            elif event.key() == Qt.Key_S:
-                self.start_clip()
-            elif event.key() == Qt.Key_E:
-                self.save_clip()
-            elif event.key() == Qt.Key_L:
-                self.toggle_loop()
-            elif event.key() == Qt.Key_N or event.key() == Qt.Key_Down:
+        key = event.key()
+        
+        if key in (Qt.Key_Delete, Qt.Key_Backspace):
+            self.delete_clip()
+        elif key == Qt.Key_Right:
+            self.skip(3)  # Fine-tuned seeking
+        elif key == Qt.Key_Left:
+            self.skip(-3)  # Fine-tuned seeking
+        elif key == Qt.Key_Space:
+            if self.is_playing:
+                self.pause_video()
+            else:
+                self.play_video()
+        elif key == Qt.Key_S:
+            self.start_clip()
+        elif key == Qt.Key_E:
+            self.save_clip()
+        elif key == Qt.Key_L:
+            self.toggle_loop()
+        elif key in (Qt.Key_N, Qt.Key_Down):
+            if self.single_video_mode:
                 self.next_clip()
-            elif event.key() == Qt.Key_P or event.key() == Qt.Key_Up:
-                self.previous_clip()
-            elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-                self.play_favorite()
-            elif event.key() == Qt.Key_A:
-                self.toggle_video_audio_mode()  # Toggle video/audio mode with 'A' key
-            elif event.key() == Qt.Key_Q:
-                self.toggle_half_speed()  # Toggle half speed with 'Q' key
-        else:
-            # All videos mode shortcuts
-            if event.key() in (Qt.Key_N, Qt.Key_Down):
+            else:
                 self.navigate_tree(1)  # Move down in the tree
-            elif event.key() in (Qt.Key_P, Qt.Key_Up):
+        elif key in (Qt.Key_P, Qt.Key_Up):
+            if self.single_video_mode:
+                self.previous_clip()
+            else:
                 self.navigate_tree(-1)  # Move up in the tree
-            elif event.key() in (Qt.Key_Return, Qt.Key_Enter):
+        elif key in (Qt.Key_Return, Qt.Key_Enter):
+            if self.single_video_mode:
+                self.play_favorite()
+            else:
                 self.play_selected_clip()  # Play the selected clip
+        elif key == Qt.Key_A:
+            self.toggle_video_audio_mode()  # Toggle video/audio mode with 'A' key
+        elif key == Qt.Key_Q:
+            self.toggle_half_speed()  # Toggle half speed with 'Q' key
 
     def navigate_tree(self, direction):
         """Navigate the video clips tree."""
@@ -851,6 +852,8 @@ class CustomTreeWidget(QTreeWidget):
             self.parent().navigate_tree(-1)
         elif event.key() in (Qt.Key_Return, Qt.Key_Enter):
             self.parent().play_selected_clip()
+        elif event.key() == Qt.Key_Space:
+            self.parent().toggle_play_pause()
         else:
             super().keyPressEvent(event)
 
