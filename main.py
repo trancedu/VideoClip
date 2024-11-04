@@ -174,6 +174,12 @@ class VideoPlayerApp(QWidget):
         self.toggle_video_list_button.clicked.connect(self.toggle_video_list)
         control_layout.addWidget(self.toggle_video_list_button)
 
+        # Open/Collapse All Button
+        self.toggle_expand_button = QPushButton("Expand All")
+        self.toggle_expand_button.clicked.connect(self.toggle_expand_collapse_all)
+        self.toggle_expand_button.hide()  # Initially hidden
+        control_layout.addWidget(self.toggle_expand_button)
+
         # Feedback label
         self.feedback_label = QLabel("")
         control_layout.addWidget(self.feedback_label)
@@ -784,13 +790,25 @@ class VideoPlayerApp(QWidget):
             self.toggle_video_list_button.setText("Single/All Videos")
             self.feedback_label.setText("Single video mode enabled.")
             self.favorites_list.setFocus()  # Set focus to the favorites list
+            self.toggle_expand_button.hide()  # Hide the expand/collapse button
         else:
             self.favorites_list.hide()
             self.video_clips_tree.show()
             self.load_config_files()  # Load the config files when switching to all videos mode
+            self.video_clips_tree.collapseAll()  # Collapse all items by default
             self.toggle_video_list_button.setText("Single/All Videos")
             self.feedback_label.setText("All videos mode enabled.")
             self.video_clips_tree.setFocus()  # Set focus to the video clips tree
+            self.toggle_expand_button.show()  # Show the expand/collapse button
+
+    def toggle_expand_collapse_all(self):
+        """Toggle between expanding and collapsing all items in the video clips tree."""
+        if self.toggle_expand_button.text() == "Expand All":
+            self.video_clips_tree.expandAll()
+            self.toggle_expand_button.setText("Collapse All")
+        else:
+            self.video_clips_tree.collapseAll()
+            self.toggle_expand_button.setText("Expand All")
 
 class CustomListWidget(QListWidget):
     def __init__(self, parent=None):
