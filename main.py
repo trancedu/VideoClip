@@ -500,17 +500,34 @@ class VideoPlayerApp(QWidget):
             self.feedback_label.setText("Returned to main video")
 
     def delete_clip(self):
-        selected_row = self.favorites_list.currentRow()
-        if selected_row >= 0:
-            del self.favorites[selected_row]
-            self.favorites_list.takeItem(selected_row)
-            self.save_clips_to_file()
-            self.feedback_label.setText(f"Deleted clip {selected_row + 1}")
-            if self.favorites_list.count() > 0:
-                self.favorites_list.setCurrentRow(max(selected_row - 1, 0))
-            
+        if self.single_video_mode:
+            # Get the selected row from the favorites list
+            selected_row = self.favorites_list.currentRow()
+            if selected_row >= 0:
+                del self.favorites[selected_row]
+                self.favorites_list.takeItem(selected_row)
+                self.save_clips_to_file()
+                self.update_favorites_list()  # Update the favorites list widget
+                self.feedback_label.setText(f"Deleted clip {selected_row + 1}")
+                if self.favorites_list.count() > 0:
+                    self.favorites_list.setCurrentRow(max(selected_row - 1, 0))
+            else:
+                self.feedback_label.setText("No clip selected to delete.")
         else:
-            self.feedback_label.setText("No clip selected to delete.")
+            # Get the selected item from the video clips tree
+            current_item = self.video_clips_tree.currentItem()
+            if current_item and current_item.parent():  # Ensure it's a clip, not a video
+                parent_item = current_item.parent()
+                clip_index = parent_item.indexOfChild(current_item)
+                del self.favorites[clip_index]
+                parent_item.takeChild(clip_index)
+                self.save_clips_to_file()
+                self.update_video_clips_tree()  # Update the video clips tree
+                self.feedback_label.setText(f"Deleted clip {clip_index + 1}")
+                if parent_item.childCount() > 0:
+                    self.video_clips_tree.setCurrentItem(parent_item.child(max(clip_index - 1, 0)))
+            else:
+                self.feedback_label.setText("No clip selected to delete.")
 
     def toggle_loop(self):
         self.loop_enabled = not self.loop_enabled
