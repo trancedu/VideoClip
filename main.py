@@ -87,6 +87,19 @@ class VideoPlayerApp(QWidget):
         # Install an event filter to capture key events globally
         QApplication.instance().installEventFilter(self)
 
+        self.video_paths = self.scan_for_videos(base_video_dir)
+
+    def scan_for_videos(self, base_dir):
+        """Scan the base directory and subdirectories for .mp4 files."""
+        video_paths = {}
+        for root, _, files in os.walk(base_dir):
+            for file in files:
+                if file.endswith('.mp4'):
+                    video_name = file
+                    video_path = os.path.join(root, file)
+                    video_paths[video_name] = video_path
+        return video_paths
+
     def create_widgets(self):
         # Main layout
         main_layout = QHBoxLayout(self)
@@ -778,10 +791,12 @@ class VideoPlayerApp(QWidget):
         # Iterate over sorted JSON files
         for file_name in json_files:
             video_name = file_name[:-5]  # Remove the '.json' extension
-            video_path = os.path.join(self.base_video_dir, video_name)
+
+            # Use the video_paths dictionary to find the video path
+            video_path = self.video_paths.get(video_name)
 
             # Check if the video file exists
-            if not os.path.exists(video_path):
+            if not video_path:
                 continue  # Skip this config file if the video file does not exist
 
             file_path = os.path.join(self.config_dir, file_name)
@@ -808,8 +823,8 @@ class VideoPlayerApp(QWidget):
             clip_text = item.text(0)
             start, end = self.parse_clip_text(clip_text)
 
-            # Construct the full video path
-            video_path = os.path.join(self.base_video_dir, video_name)
+            # Use the video_paths dictionary to find the video path
+            video_path = self.video_paths.get(video_name)
 
             # Check if the current video is the same as the new video
             if self.video_path != video_path:
@@ -929,7 +944,7 @@ if __name__ == "__main__":
 
     # Define the video and config path
     hardcoded_video_path = r"Videos/S04.1080p.中英字幕/Fresh.Off.the.Boat.S04E01.1080p.AMZN.WEB.mp4"
-    hardcoded_base_video_dir = r"Videos/S04.1080p.中英字幕"
+    hardcoded_base_video_dir = r"Videos"
     mac_config_path = "Library/CloudStorage/OneDrive-Personal/Projects/config"
     win_config_path = r"OneDrive/Projects/config"
 
