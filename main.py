@@ -21,7 +21,7 @@ class MainWindow(QWidget):
         self.setWindowTitle("English Listening Practice")
         self.main_layout = QHBoxLayout(self)
         self.create_widgets(video_player)
-        self.resize(800, 600)
+        self.resize(1000, 600)
     
     def create_widgets(self, video_player: VideoPlayer):
         self.create_video_slider_widget(video_player)
@@ -39,7 +39,7 @@ class MainWindow(QWidget):
         self.slider = self._create_slider(video_player)
         layout.addWidget(self.slider)
         
-        self.main_layout.addLayout(layout, 7)
+        self.main_layout.addLayout(layout, 3)
 
     def create_video_list_widget(self):
         layout = QVBoxLayout(self)
