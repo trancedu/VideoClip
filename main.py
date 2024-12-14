@@ -21,6 +21,7 @@ class MainWindow(QWidget):
         self.setWindowTitle("English Listening Practice")
         self.main_layout = QHBoxLayout(self)
         self.create_widgets(video_player)
+        self.setLayout(self.main_layout)
         self.resize(1000, 600)
     
     def create_widgets(self, video_player: VideoPlayer):
@@ -28,7 +29,7 @@ class MainWindow(QWidget):
         self.create_video_list_widget()
 
     def create_video_slider_widget(self, video_player: VideoPlayer):
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout()
 
         self.video_widget = self._create_video_widget(video_player)
         layout.addWidget(self.video_widget)
@@ -42,7 +43,7 @@ class MainWindow(QWidget):
         self.main_layout.addLayout(layout, 3)
 
     def create_video_list_widget(self):
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout()
 
         self.video_list_widget = QListWidget(self)
         layout.addWidget(self.video_list_widget)
@@ -144,10 +145,11 @@ class ClickableSlider(QSlider):
 
 def main():
     video_path = r"Videos/S04.1080p.中英字幕/Fresh.Off.the.Boat.S04E01.1080p.AMZN.WEB.mp4"
-    mac_config_path = r"Library/CloudStorage/OneDrive-Personal/Projects/config"
+    mac_clip_path = r"Library/CloudStorage/OneDrive-Personal/Projects/config"
+    video_base_path = r"Videos"
     
-    config_manager = ConfigManager(video_path, mac_config_path)
-    clip_manager = ClipManager()
+    config_manager = ConfigManager(video_path, mac_clip_path, video_base_path)
+    clip_manager = ClipManager(config_manager.get_clip_path(), config_manager.get_video_base_path())
     video_player = VideoPlayer()
     video_player.load_video(config_manager.get_video_path())
 
