@@ -19,27 +19,46 @@ class MainWindow(QWidget):
     def __init__(self, video_player: VideoPlayer):
         super().__init__()
         self.setWindowTitle("English Listening Practice")
-        self.create_video_widget(video_player)
-        
-    def create_video_widget(self, video_player: VideoPlayer):
+        self.main_layout = QHBoxLayout(self)
+        self.create_widgets(video_player)
+        self.resize(800, 600)
+    
+    def create_widgets(self, video_player: VideoPlayer):
+        self.create_video_slider_widget(video_player)
+        self.create_video_list_widget()
+
+    def create_video_slider_widget(self, video_player: VideoPlayer):
         layout = QVBoxLayout(self)
 
-        self.video_widget = ClickableVideoWidget(video_player, self)
+        self.video_widget = self._create_video_widget(video_player)
         layout.addWidget(self.video_widget)
 
-        self.play_button = QPushButton("Play/Pause", self)
-        self.play_button.clicked.connect(self.video_widget.toggle_play_pause)
+        self.play_button = self._create_play_button()
         layout.addWidget(self.play_button)
 
-        self.create_slider(video_player)
+        self.slider = self._create_slider(video_player)
         layout.addWidget(self.slider)
         
-        self.setLayout(layout)
-        self.resize(800, 600)
+        self.main_layout.addLayout(layout, 7)
 
-    def create_slider(self, video_player: VideoPlayer):
-        self.slider = ClickableSlider(video_player, self)
+    def create_video_list_widget(self):
+        layout = QVBoxLayout(self)
 
+        self.video_list_widget = QListWidget(self)
+        layout.addWidget(self.video_list_widget)
+
+        self.main_layout.addLayout(layout, 1)
+
+    def _create_video_widget(self, video_player: VideoPlayer):
+        return ClickableVideoWidget(video_player, self)
+    
+    def _create_play_button(self):
+        button = QPushButton("Play/Pause", self)
+        button.clicked.connect(self.video_widget.toggle_play_pause)
+        return button
+
+    def _create_slider(self, video_player: VideoPlayer):
+        return ClickableSlider(video_player, self)
 
 
 class ClickableVideoWidget(QWidget):
