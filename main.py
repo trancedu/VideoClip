@@ -142,7 +142,6 @@ def main():
     clip_manager = ClipManager()
     video_player = VideoPlayer()
     video_player.load_video(config_manager.get_video_path())
-    # video_player.play()
 
     app = QApplication(sys.argv)
     window = MainWindow(video_player)
