@@ -17,20 +17,29 @@ class VideoPlayer:
     def play(self):
         self.player.play()
 
+    def toggle_play_pause(self):
+        if self.is_playing():
+            self.pause()
+        else:
+            self.play()
+
+    def is_playing(self):
+        return self.player.is_playing()
+
     def fast_forward(self, second=3):
-        pass 
+        self.set_position(self.get_position() + second)
 
     def fast_backward(self, second=3):
-        pass 
+        self.set_position(self.get_position() - second)
 
     def set_speed(self, speed):
         pass 
 
     def get_position(self):
-        pass
+        return self.player.get_position()
 
     def set_position(self, position):
-        pass
+        self.player.set_position(position)
 
     def set_output_widget(self, widget):
         if sys.platform == "win32":
