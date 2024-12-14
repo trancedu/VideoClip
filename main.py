@@ -16,17 +16,18 @@ from clip_manager import ClipManager
 from video_player import VideoPlayer
 
 class MainWindow(QWidget):
-    def __init__(self, video_player: VideoPlayer):
+    def __init__(self, video_player: VideoPlayer, clip_manager: ClipManager):
         super().__init__()
         self.setWindowTitle("English Listening Practice")
         self.main_layout = QHBoxLayout(self)
-        self.create_widgets(video_player)
+        self.create_widgets(video_player, clip_manager)
         self.setLayout(self.main_layout)
         self.resize(1000, 600)
     
-    def create_widgets(self, video_player: VideoPlayer):
+    def create_widgets(self, video_player: VideoPlayer, clip_manager: ClipManager):
         self.create_video_slider_widget(video_player)
-        self.create_video_list_widget()
+        # self.create_video_list_widget()
+        self.create_clip_tree_widget(clip_manager)
 
     def create_video_slider_widget(self, video_player: VideoPlayer):
         layout = QVBoxLayout()
@@ -47,6 +48,24 @@ class MainWindow(QWidget):
 
         self.video_list_widget = QListWidget(self)
         layout.addWidget(self.video_list_widget)
+
+        self.main_layout.addLayout(layout, 1)
+
+    def create_clip_tree_widget(self, clip_manager: ClipManager):
+        layout = QVBoxLayout()
+
+        self.video_clips_tree = QTreeWidget()
+        self.video_clips_tree.setHeaderLabels(["Video"])
+        # self.video_clips_tree.itemClicked.connect(self.on_clip_selected)  # Connect item click event
+        # self.video_clips_tree.hide()  # Initially hide the tree
+        layout.addWidget(self.video_clips_tree)
+
+        for video_name, clips in clip_manager.video_clips.items():
+            video_item = QTreeWidgetItem(self.video_clips_tree, [video_name])
+            for clip in clips:
+                start, end = clip['positions']
+                clip_item = QTreeWidgetItem(video_item, [f"Clip: {start:.2f}s - {end:.2f}s"])
+                video_item.addChild(clip_item)
 
         self.main_layout.addLayout(layout, 1)
 
@@ -154,7 +173,7 @@ def main():
     video_player.load_video(config_manager.get_video_path())
 
     app = QApplication(sys.argv)
-    window = MainWindow(video_player)
+    window = MainWindow(video_player, clip_manager)
     window.show()
     sys.exit(app.exec_())
 

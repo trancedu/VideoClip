@@ -25,4 +25,5 @@ class ConfigManager:
         return self.video_base_path
     
     def set_video_base_path(self, path):
-        self.video_base_path = path
+        home_path = os.path.expanduser("~")
+        self.video_base_path = os.path.join(home_path, path)

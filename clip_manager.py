@@ -13,6 +13,7 @@ class ClipManager:
     def scan_for_videos(self, base_video_dir):
         """Scan the base directory and subdirectories for .mp4 files."""
         video_paths = {}
+        
         for root, _, files in os.walk(base_video_dir):
             for file in files:
                 if file.endswith('.mp4'):
@@ -22,7 +23,7 @@ class ClipManager:
         return video_paths
 
     def populate_video_clips(self, clip_directory):
-        self.video_clips = {}
+        video_clips = {}
         # Get all JSON files in the config directory and sort them by name
         json_files = sorted([f for f in os.listdir(clip_directory) if f.endswith('.json')])
         # Iterate over sorted JSON files
@@ -41,8 +42,8 @@ class ClipManager:
             with open(file_path, 'r') as f:
                 clips = json.load(f)
 
-            self.video_clips[video_name] = clips
-        return self.video_clips
+            video_clips[video_name] = clips
+        return video_clips
 
     def add_clip_to_video(self, video_path, clip):
         self.video_clips[video_path].append(clip)
