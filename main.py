@@ -56,17 +56,6 @@ class ClickableVideoWidget(QWidget):
     def toggle_play_pause(self):
         self.video_player.toggle_play_pause()
 
-    def set_time(self, position):
-        self.video_player.set_time(int(position))
-
-    def is_playing(self):
-        return self.video_player.is_playing()
-
-    def get_length(self):
-        return self.video_player.get_length()
-    
-    def get_time(self):
-        return self.video_player.get_time()
 
 class ClickableSlider(QSlider):
     def __init__(self, video_player: VideoPlayer, parent=None):
