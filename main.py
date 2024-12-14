@@ -21,12 +21,6 @@ class MainWindow(QWidget):
         self.setWindowTitle("English Listening Practice")
         self.create_video_widget(video_player)
         
-        # Initialize a timer to update the slider position
-        self.timer = QTimer(self)
-        self.timer.setInterval(200)  # Update every 200 ms
-        self.timer.timeout.connect(self.update_position)
-        self.timer.start()
-
     def create_video_widget(self, video_player: VideoPlayer):
         layout = QVBoxLayout(self)
 
@@ -37,32 +31,16 @@ class MainWindow(QWidget):
         self.play_button.clicked.connect(self.video_widget.toggle_play_pause)
         layout.addWidget(self.play_button)
 
-        self.create_slider()
+        self.create_slider(video_player)
         layout.addWidget(self.slider)
         
         self.setLayout(layout)
         self.resize(800, 600)
 
-    def create_slider(self):
-        self.slider = ClickableSlider(self.video_widget, self)
+    def create_slider(self, video_player: VideoPlayer):
+        self.slider = ClickableSlider(video_player, self)
 
-    def update_position(self):
-        current_time = self.video_widget.get_time()
-        total_time = self.video_widget.get_length()
-        
-        if total_time > 0:
-            self.slider.setRange(0, total_time)
-            self.slider.setValue(current_time)
-            # Update tooltip or label if needed
-            current_time_str = self.format_time(current_time)
-            total_time_str = self.format_time(total_time)
-            self.slider.setToolTip(f"{current_time_str} / {total_time_str}")
 
-    def format_time(self, ms):
-        seconds = int(ms / 1000)
-        minutes = seconds // 60
-        seconds = seconds % 60
-        return f"{minutes}:{seconds:02}"
 
 class ClickableVideoWidget(QWidget):
     def __init__(self, video_player: VideoPlayer, parent=None):
@@ -91,19 +69,24 @@ class ClickableVideoWidget(QWidget):
         return self.video_player.get_time()
 
 class ClickableSlider(QSlider):
-    def __init__(self, video_widget: ClickableVideoWidget, parent=None):
+    def __init__(self, video_player: VideoPlayer, parent=None):
         super().__init__()
-        self.video_widget = video_widget
+        self.video_player = video_player
         self.setOrientation(Qt.Horizontal)
-        # self.setRange(0, self.video_widget.get_length())
         self.setRange(0, 0)
-        self.setValue(self.video_widget.get_time())
-        self.sliderMoved.connect(self.video_widget.set_time)
+        self.setValue(self.video_player.get_time())
+        self.sliderMoved.connect(self.video_player.set_time)
         self.sliderPressed.connect(self.slider_clicked)  # Connect slider click
         self.setToolTip("0:00")  # Initial tooltip
         self.setMouseTracking(True)
         self.installEventFilter(self)
         self.setFixedHeight(20)  # Set a fixed height for the slider
+
+        # Initialize a timer to update the slider position
+        self.timer = QTimer(self)
+        self.timer.setInterval(200)  # Update every 200 ms
+        self.timer.timeout.connect(self.update_position)
+        self.timer.start()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -113,25 +96,43 @@ class ClickableSlider(QSlider):
             self.setValue(new_value)
             
             # Debugging output
-            print(f"Clicked position: {event.x()}, New slider value: {new_value}")
-            print(f"Slider range: {self.minimum()} - {self.maximum()}")
+            # print(f"Clicked position: {event.x()}, New slider value: {new_value}")
+            # print(f"Slider range: {self.minimum()} - {self.maximum()}")
             
             # Set the new position in the video widget
-            self.video_widget.set_time(new_value)
+            self.video_player.set_time(new_value)
             
             # Check if the video player is in a state to accept the new position
-            if not self.video_widget.is_playing():
-                print("Video is not playing, attempting to play.")
-                self.video_widget.toggle_play_pause()
-        
+            if not self.video_player.is_playing():
+                # print("Video is not playing, attempting to play.")
+                self.video_player.toggle_play_pause()
+
         # Call the base class implementation
         # super().mousePressEvent(event)
     
     def slider_clicked(self):
         value = self.value()
-        self.video_widget.set_time(value)
-        if not self.video_widget.is_playing:
-            self.video_widget.play_video()
+        self.video_player.set_time(value)
+        if not self.video_player.is_playing():
+            self.video_player.play()
+
+    def update_position(self):
+        current_time = self.video_player.get_time()
+        total_time = self.video_player.get_length()
+        
+        if total_time > 0:
+            self.setRange(0, total_time)
+            self.setValue(current_time)
+            # Update tooltip or label if needed
+            current_time_str = self.format_time(current_time)
+            total_time_str = self.format_time(total_time)
+            self.setToolTip(f"{current_time_str} / {total_time_str}")
+
+    def format_time(self, ms):
+        seconds = int(ms / 1000)
+        minutes = seconds // 60
+        seconds = seconds % 60
+        return f"{minutes}:{seconds:02}"
 
 def main():
     video_path = r"Videos/S04.1080p.中英字幕/Fresh.Off.the.Boat.S04E01.1080p.AMZN.WEB.mp4"
