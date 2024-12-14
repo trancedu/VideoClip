@@ -4,7 +4,7 @@ import sys
 class VideoPlayer:
     def __init__(self):
         self.instance = vlc.Instance()
-        self.player = self.instance.media_player_new()
+        self.player: vlc.MediaPlayer = self.instance.media_player_new()
         self.video_path = ""
 
     def load_video(self, video_path):

@@ -82,7 +82,7 @@ class ClickableVideoWidget(QWidget):
         self.video_player.set_time(int(position))
 
     def is_playing(self):
-        return self.video_player.is_playing
+        return self.video_player.is_playing()
 
     def get_length(self):
         return self.video_player.get_length()
