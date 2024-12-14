@@ -27,19 +27,19 @@ class VideoPlayer:
         return self.player.is_playing()
 
     def fast_forward(self, second=3):
-        self.set_position(self.get_position() + second)
+        self.set_time(self.get_time() + second)
 
     def fast_backward(self, second=3):
-        self.set_position(self.get_position() - second)
+        self.set_time(self.get_time() - second)
 
     def set_speed(self, speed):
         pass 
 
-    def get_position(self):
-        return self.player.get_position()
+    def get_time(self):
+        return self.player.get_time()
 
-    def set_position(self, position):
-        self.player.set_position(position)
+    def set_time(self, time):
+        self.player.set_time(time)
 
     def set_output_widget(self, widget):
         if sys.platform == "win32":
@@ -48,3 +48,9 @@ class VideoPlayer:
             self.player.set_nsobject(int(widget.winId()))
         elif sys.platform.startswith('linux'):
             self.player.set_xwindow(widget.winId())
+
+    def get_length(self):
+        return self.player.get_length()
+
+    def get_time(self):
+        return self.player.get_time()

@@ -19,7 +19,13 @@ class MainWindow(QWidget):
     def __init__(self, video_player: VideoPlayer):
         super().__init__()
         self.setWindowTitle("English Listening Practice")
-        self.create_video_widget(video_player) 
+        self.create_video_widget(video_player)
+        
+        # Initialize a timer to update the slider position
+        self.timer = QTimer(self)
+        self.timer.setInterval(200)  # Update every 200 ms
+        self.timer.timeout.connect(self.update_position)
+        self.timer.start()
 
     def create_video_widget(self, video_player: VideoPlayer):
         layout = QVBoxLayout(self)
@@ -40,12 +46,31 @@ class MainWindow(QWidget):
     def create_slider(self):
         self.slider = ClickableSlider(self.video_widget, self)
 
+    def update_position(self):
+        current_time = self.video_widget.get_time()
+        total_time = self.video_widget.get_length()
+        
+        if total_time > 0:
+            self.slider.setRange(0, total_time)
+            self.slider.setValue(current_time)
+            # Update tooltip or label if needed
+            current_time_str = self.format_time(current_time)
+            total_time_str = self.format_time(total_time)
+            self.slider.setToolTip(f"{current_time_str} / {total_time_str}")
+
+    def format_time(self, ms):
+        seconds = int(ms / 1000)
+        minutes = seconds // 60
+        seconds = seconds % 60
+        return f"{minutes}:{seconds:02}"
+
 class ClickableVideoWidget(QWidget):
     def __init__(self, video_player: VideoPlayer, parent=None):
         super().__init__(parent)
         self.setMouseTracking(True)
         self.video_player = video_player
         self.video_player.set_output_widget(self)
+        self.video_player.play()
     
     def mousePressEvent(self, event):
         self.toggle_play_pause()
@@ -53,20 +78,27 @@ class ClickableVideoWidget(QWidget):
     def toggle_play_pause(self):
         self.video_player.toggle_play_pause()
 
-    def set_position(self, position):
-        self.video_player.set_position(position)
+    def set_time(self, position):
+        self.video_player.set_time(int(position))
 
     def is_playing(self):
         return self.video_player.is_playing
 
+    def get_length(self):
+        return self.video_player.get_length()
+    
+    def get_time(self):
+        return self.video_player.get_time()
 
 class ClickableSlider(QSlider):
     def __init__(self, video_widget: ClickableVideoWidget, parent=None):
         super().__init__()
         self.video_widget = video_widget
         self.setOrientation(Qt.Horizontal)
-        self.setRange(0, 100)
-        self.sliderMoved.connect(self.video_widget.set_position)
+        # self.setRange(0, self.video_widget.get_length())
+        self.setRange(0, 0)
+        self.setValue(self.video_widget.get_time())
+        self.sliderMoved.connect(self.video_widget.set_time)
         self.sliderPressed.connect(self.slider_clicked)  # Connect slider click
         self.setToolTip("0:00")  # Initial tooltip
         self.setMouseTracking(True)
@@ -79,13 +111,25 @@ class ClickableSlider(QSlider):
             new_value = QStyle.sliderValueFromPosition(
                 self.minimum(), self.maximum(), event.x(), self.width())
             self.setValue(new_value)
-            print(new_value)
-            self.video_widget.set_position(new_value)
-        super().mousePressEvent(event)
+            
+            # Debugging output
+            print(f"Clicked position: {event.x()}, New slider value: {new_value}")
+            print(f"Slider range: {self.minimum()} - {self.maximum()}")
+            
+            # Set the new position in the video widget
+            self.video_widget.set_time(new_value)
+            
+            # Check if the video player is in a state to accept the new position
+            if not self.video_widget.is_playing():
+                print("Video is not playing, attempting to play.")
+                self.video_widget.toggle_play_pause()
+        
+        # Call the base class implementation
+        # super().mousePressEvent(event)
     
     def slider_clicked(self):
         value = self.value()
-        self.video_widget.set_position(value)
+        self.video_widget.set_time(value)
         if not self.video_widget.is_playing:
             self.video_widget.play_video()
 
