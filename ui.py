@@ -21,7 +21,7 @@ class MainWindow(QWidget):
     def create_widgets(self, video_player: VideoPlayer, clip_manager: ClipManager):
         self.create_video_slider_widget(video_player)
         # self.create_video_list_widget()
-        self.create_clip_tree_widget(clip_manager)
+        self.create_clip_tree_widget(clip_manager, video_player)
 
     def create_video_slider_widget(self, video_player: VideoPlayer):
         layout = QVBoxLayout()
@@ -45,21 +45,11 @@ class MainWindow(QWidget):
 
         self.main_layout.addLayout(layout, 1)
 
-    def create_clip_tree_widget(self, clip_manager: ClipManager):
+    def create_clip_tree_widget(self, clip_manager: ClipManager, video_player: VideoPlayer):
         layout = QVBoxLayout()
 
-        self.video_clips_tree = QTreeWidget()
-        self.video_clips_tree.setHeaderLabels(["Video"])
-        # self.video_clips_tree.itemClicked.connect(self.on_clip_selected)  # Connect item click event
-        # self.video_clips_tree.hide()  # Initially hide the tree
-        layout.addWidget(self.video_clips_tree)
-
-        for video_name, clips in clip_manager.video_clips.items():
-            video_item = QTreeWidgetItem(self.video_clips_tree, [video_name])
-            for clip in clips:
-                start, end = clip['positions']
-                clip_item = QTreeWidgetItem(video_item, [f"Clip: {start:.2f}s - {end:.2f}s"])
-                video_item.addChild(clip_item)
+        self.clip_tree_widget = ClipTreeWidget(clip_manager, video_player)
+        layout.addWidget(self.clip_tree_widget)
 
         self.main_layout.addLayout(layout, 1)
 
@@ -155,3 +145,48 @@ class ClickableSlider(QSlider):
         minutes = seconds // 60
         seconds = seconds % 60
         return f"{minutes}:{seconds:02}"
+    
+
+class ClipTreeWidget(QTreeWidget):
+    def __init__(self, clip_manager: ClipManager, video_player: VideoPlayer, parent=None):
+        super().__init__(parent)
+        self.clip_manager = clip_manager
+        self.video_player = video_player
+        self.setHeaderLabels(["Video"])
+        self.populate_tree()
+        self.itemClicked.connect(self.on_clip_selected)
+
+    def populate_tree(self):
+        for video_name, clips in self.clip_manager.video_clips.items():
+            video_item = QTreeWidgetItem(self, [video_name])
+            for clip in clips:
+                start, end = clip['positions']
+                clip_item = QTreeWidgetItem(video_item, [f"Clip: {start:.2f}s - {end:.2f}s"])
+                video_item.addChild(clip_item)
+
+    def on_clip_selected(self):
+        """Play the selected clip not video in the tree"""
+        item = self.currentItem()
+        if item and item.parent():
+            video_name = item.parent().text(0)
+            clip_text = item.text(0)
+            start, end = self.parse_clip_text(clip_text)
+
+            # Use the video_paths dictionary to find the video path
+            video_path = self.clip_manager.get_video_path(video_name)
+            print(f"Video path: {video_path}")
+            # Check if the current video is the same as the new video
+            if self.video_player.get_video_path() != video_path:
+                self.video_player.load_video(video_path=video_path)
+                self.video_player.play()
+
+            # Play the clip
+            self.video_player.play(int(start * 1000))
+ 
+    def parse_clip_text(self, clip_text):
+        """Parse the clip text to extract start and end times."""
+        # Example clip text: "Clip: 10.00s - 20.00s"
+        parts = clip_text.split(": ")[1].split(" - ")
+        start = float(parts[0].replace("s", ""))
+        end = float(parts[1].replace("s", ""))
+        return start, end

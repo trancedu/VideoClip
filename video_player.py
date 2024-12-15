@@ -14,7 +14,9 @@ class VideoPlayer:
     def pause(self):
         self.player.pause()
 
-    def play(self):
+    def play(self, start=None):
+        if start is not None:
+            self.set_time(start)
         self.player.play()
 
     def toggle_play_pause(self):
@@ -54,3 +56,9 @@ class VideoPlayer:
 
     def get_time(self):
         return self.player.get_time()
+    
+    def get_video_path(self):
+        return self.video_path
+    
+    def set_video_path(self, video_path):
+        self.video_path = video_path

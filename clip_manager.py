@@ -22,6 +22,9 @@ class ClipManager:
                     video_paths[video_name] = video_path
         return video_paths
 
+    def get_video_path(self, video_name):
+        return self.video_paths.get(video_name)
+
     def populate_video_clips(self, clip_directory):
         video_clips = {}
         # Get all JSON files in the config directory and sort them by name
@@ -31,7 +34,7 @@ class ClipManager:
             video_name = file_name[:-5]  # Remove the '.json' extension
 
             # Use the video_paths dictionary to find the video path
-            video_path = self.video_paths.get(video_name)
+            video_path = self.get_video_path(video_name)
 
             # Check if the video file exists
             if not video_path:
