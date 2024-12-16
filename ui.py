@@ -7,10 +7,9 @@ from PyQt5.QtCore import Qt, QTimer, QEvent
 from PyQt5.QtGui import QMouseEvent
 
 from clip_manager import ClipManager
-from video_player import VideoPlayer
 
 class MainWindow(QWidget):
-    def __init__(self, video_player: VideoPlayer, clip_manager: ClipManager):
+    def __init__(self, clip_manager: ClipManager):
         super().__init__()
         self.setWindowTitle("English Listening Practice")
         self.main_layout = QHBoxLayout(self)
@@ -18,8 +17,8 @@ class MainWindow(QWidget):
         self.setLayout(self.main_layout)
         self.resize(1000, 600)
     
-    def create_widgets(self, video_player: VideoPlayer, clip_manager: ClipManager):
-        self.create_video_slider_widget(video_player)
+    def create_widgets(self, clip_manager: ClipManager):
+        self.create_video_slider_widget()
         # self.create_video_list_widget()
         self.create_clip_tree_widget(clip_manager, video_player)
 
