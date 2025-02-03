@@ -7,31 +7,32 @@ from PyQt5.QtCore import Qt, QTimer, QEvent
 from PyQt5.QtGui import QMouseEvent
 
 from clip_manager import ClipManager
+from video_player import VideoPlayer
 
 class MainWindow(QWidget):
-    def __init__(self, clip_manager: ClipManager):
+    def __init__(self, video_player: VideoPlayer, clip_manager: ClipManager):
         super().__init__()
         self.setWindowTitle("English Listening Practice")
+        self.video_player = video_player
         self.main_layout = QHBoxLayout(self)
-        self.create_widgets(video_player, clip_manager)
+        self.create_widgets(clip_manager)
         self.setLayout(self.main_layout)
         self.resize(1000, 600)
     
     def create_widgets(self, clip_manager: ClipManager):
         self.create_video_slider_widget()
-        # self.create_video_list_widget()
-        self.create_clip_tree_widget(clip_manager, video_player)
+        self.create_clip_tree_widget(clip_manager)
 
-    def create_video_slider_widget(self, video_player: VideoPlayer):
+    def create_video_slider_widget(self):
         layout = QVBoxLayout()
-
-        self.video_widget = self._create_video_widget(video_player)
+        self.video_widget = ClickableVideoWidget(self.video_player, self)
         layout.addWidget(self.video_widget)
-
-        self.play_button = self._create_play_button()
+        
+        self.play_button = QPushButton("Play/Pause", self)
+        self.play_button.clicked.connect(self.video_player.toggle_play_pause)
         layout.addWidget(self.play_button)
-
-        self.slider = self._create_slider(video_player)
+        
+        self.slider = ClickableSlider(self.video_player, self)
         layout.addWidget(self.slider)
         
         self.main_layout.addLayout(layout, 3)
@@ -44,10 +45,10 @@ class MainWindow(QWidget):
 
         self.main_layout.addLayout(layout, 1)
 
-    def create_clip_tree_widget(self, clip_manager: ClipManager, video_player: VideoPlayer):
+    def create_clip_tree_widget(self, clip_manager: ClipManager):
         layout = QVBoxLayout()
 
-        self.clip_tree_widget = ClipTreeWidget(clip_manager, video_player)
+        self.clip_tree_widget = ClipTreeWidget(clip_manager, self.video_player)
         layout.addWidget(self.clip_tree_widget)
 
         self.main_layout.addLayout(layout, 1)
@@ -57,7 +58,7 @@ class MainWindow(QWidget):
     
     def _create_play_button(self):
         button = QPushButton("Play/Pause", self)
-        button.clicked.connect(self.video_widget.toggle_play_pause)
+        button.clicked.connect(self.video_player.toggle_play_pause)
         return button
 
     def _create_slider(self, video_player: VideoPlayer):
@@ -81,7 +82,7 @@ class ClickableVideoWidget(QWidget):
 
 class ClickableSlider(QSlider):
     def __init__(self, video_player: VideoPlayer, parent=None):
-        super().__init__()
+        super().__init__(parent)
         self.video_player = video_player
         self.setOrientation(Qt.Horizontal)
         self.setRange(0, 0)
