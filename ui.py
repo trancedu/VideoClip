@@ -136,8 +136,16 @@ class MainWindow(QWidget):
             self.clip_manager.add_clip_to_video(video_name, clip_data)
             self.clip_manager.save_video_clips(video_name)
             
+            # Force full refresh of the tree
             self.clip_tree_widget.populate_tree()
-            self.feedback_label.setText(f"Saved clip: {self.clip_start:.1f}s-{clip_end:.1f}s")
+            
+            # Find and select the new clip
+            clips = self.clip_manager.video_clips[video_name]
+            new_index = next(i for i, clip in enumerate(clips) if clip['positions'] == (self.clip_start, clip_end))
+            parent_item = self.clip_tree_widget.findItems(video_name, Qt.MatchExactly)[0]
+            self.clip_tree_widget.setCurrentItem(parent_item.child(new_index))
+            
+            self.feedback_label.setText(f"Saved clip: {self.clip_start:.2f}s-{clip_end:.2f}s")
             del self.clip_start
         else:
             self.feedback_label.setText("Set start point first!")
@@ -294,12 +302,14 @@ class ClipTreeWidget(QTreeWidget):
         self.itemClicked.connect(self.on_clip_selected)
 
     def populate_tree(self):
+        self.clear()  # Clear existing items before repopulating
         for video_name, clips in self.clip_manager.video_clips.items():
             video_item = QTreeWidgetItem(self, [video_name])
             for clip in clips:
                 start, end = clip['positions']
                 clip_item = QTreeWidgetItem(video_item, [f"Clip: {start:.2f}s - {end:.2f}s"])
                 video_item.addChild(clip_item)
+        self.expandAll()  # Optional: expand all items after refresh
 
     def on_clip_selected(self):
         """Play the selected clip not video in the tree"""
