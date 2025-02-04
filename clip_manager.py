@@ -48,8 +48,11 @@ class ClipManager:
             video_clips[video_name] = clips
         return video_clips
 
-    def add_clip_to_video(self, video_path, clip):
-        self.video_clips[video_path].append(clip)
+    def add_clip_to_video(self, video_name, clip_data):
+        if video_name not in self.video_clips:
+            self.video_clips[video_name] = []
+        self.video_clips[video_name].append(clip_data)
+        self.sort_clips(video_name)  # Sort after adding
 
     def remove_clip_from_video(self, video_path, clip):
         self.video_clips[video_path].remove(clip)
@@ -61,3 +64,8 @@ class ClipManager:
     def save_all_video_clips(self):
         for video_path in self.video_clips:
             self.save_video_clips(video_path)
+
+    def sort_clips(self, video_name):
+        """Sort clips by start time for a specific video"""
+        if video_name in self.video_clips:
+            self.video_clips[video_name].sort(key=lambda x: x['positions'][0])
