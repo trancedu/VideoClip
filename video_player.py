@@ -7,6 +7,7 @@ class VideoPlayer:
         self.player: vlc.MediaPlayer = self.instance.media_player_new()
         self.video_path = ""
         self.current_clip_end = None
+        self.playback_speed = 1.0
 
     def load_video(self, video_path):
         self.video_path = video_path
@@ -19,6 +20,7 @@ class VideoPlayer:
         if start is not None:
             self.set_time(start)
         self.player.play()
+        self.player.set_rate(self.playback_speed)
 
     def toggle_play_pause(self):
         if self.is_playing():
@@ -36,7 +38,8 @@ class VideoPlayer:
         self.set_time(self.get_time() - seconds * 1000)
 
     def set_speed(self, speed):
-        pass 
+        self.playback_speed = speed
+        self.player.set_rate(speed)
 
     def get_time(self):
         return self.player.get_time()
@@ -55,9 +58,6 @@ class VideoPlayer:
     def get_length(self):
         return self.player.get_length()
 
-    def get_time(self):
-        return self.player.get_time()
-    
     def get_video_path(self):
         return self.video_path
     
