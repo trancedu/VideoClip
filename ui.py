@@ -1,10 +1,10 @@
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QListWidget,
     QFileDialog, QLabel, QSlider, QHBoxLayout, QToolTip, QInputDialog, QMenu,
-    QStyle, QComboBox, QTreeWidget, QTreeWidgetItem, QSizePolicy  # Add QSizePolicy here
+    QStyle, QComboBox, QTreeWidget, QTreeWidgetItem, QSizePolicy, QShortcut  # Add QSizePolicy and QShortcut here
 )
 from PyQt5.QtCore import Qt, QTimer, QEvent
-from PyQt5.QtGui import QMouseEvent
+from PyQt5.QtGui import QMouseEvent, QKeySequence
 import os
 
 from clip_manager import ClipManager
@@ -20,6 +20,7 @@ class MainWindow(QWidget):
         self.create_widgets()
         self.setLayout(self.main_layout)
         self.resize(1000, 600)
+        self.setup_global_shortcuts()
     
     def create_widgets(self):
         self.create_video_slider_widget()
@@ -204,6 +205,26 @@ class MainWindow(QWidget):
         }
         """
 
+    def setup_global_shortcuts(self):
+        """Create global keyboard shortcuts that work anywhere in the app"""
+        # Space - Play/Pause
+        QShortcut(QKeySequence(Qt.Key_Space), self).activated.connect(
+            self.video_player.toggle_play_pause
+        )
+        
+        # S - Start clip
+        QShortcut(QKeySequence(Qt.Key_S), self).activated.connect(self.start_clip)
+        
+        # E - End/Save clip
+        QShortcut(QKeySequence(Qt.Key_E), self).activated.connect(self.save_clip)
+        
+        # Enter/Return - Replay selected clip
+        QShortcut(QKeySequence(Qt.Key_Return), self).activated.connect(
+            lambda: self.clip_tree_widget.on_clip_selected() 
+            if self.clip_tree_widget.currentItem() 
+            else None
+        )
+
 class ClickableVideoWidget(QWidget):
     def __init__(self, video_player: VideoPlayer, parent=None):
         super().__init__(parent)
@@ -221,13 +242,7 @@ class ClickableVideoWidget(QWidget):
 
     def keyPressEvent(self, event):
         key = event.key()
-        if key == Qt.Key_Space:
-            self.toggle_play_pause()
-        elif key == Qt.Key_S:  # Start clip
-            self.parent().start_clip()
-        elif key == Qt.Key_E:  # End/Save clip
-            self.parent().save_clip()
-        elif key in (Qt.Key_Right, Qt.Key_K, Qt.Key_F):
+        if key in (Qt.Key_Right, Qt.Key_K, Qt.Key_F):
             self.video_player.fast_forward(3)
         elif key in (Qt.Key_Left, Qt.Key_J, Qt.Key_D):
             self.video_player.fast_backward(3)
