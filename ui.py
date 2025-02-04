@@ -96,7 +96,7 @@ class ClickableSlider(QSlider):
 
         # Initialize a timer to update the slider position
         self.timer = QTimer(self)
-        self.timer.setInterval(200)  # Update every 200 ms
+        self.timer.setInterval(100)  # Update every 100 ms
         self.timer.timeout.connect(self.update_position)
         self.timer.start()
 
