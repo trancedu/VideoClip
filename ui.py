@@ -121,6 +121,7 @@ class MainWindow(QWidget):
         if path:
             self.video_player.load_video(path)
             self.feedback_label.setText(f"Loaded: {os.path.basename(path)}")
+            self.video_player.play()
 
     def start_clip(self):
         self.clip_start = self.video_player.get_time() / 1000
