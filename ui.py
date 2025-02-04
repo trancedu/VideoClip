@@ -223,6 +223,10 @@ class ClickableVideoWidget(QWidget):
         key = event.key()
         if key == Qt.Key_Space:
             self.toggle_play_pause()
+        elif key == Qt.Key_S:  # Start clip
+            self.parent().start_clip()
+        elif key == Qt.Key_E:  # End/Save clip
+            self.parent().save_clip()
         elif key in (Qt.Key_Right, Qt.Key_K, Qt.Key_F):
             self.video_player.fast_forward(3)
         elif key in (Qt.Key_Left, Qt.Key_J, Qt.Key_D):
