@@ -72,12 +72,24 @@ class ClickableVideoWidget(QWidget):
         self.video_player = video_player
         self.video_player.set_output_widget(self)
         self.video_player.play()
+        self.setFocusPolicy(Qt.StrongFocus)
     
     def mousePressEvent(self, event):
         self.toggle_play_pause()
 
     def toggle_play_pause(self):
         self.video_player.toggle_play_pause()
+
+    def keyPressEvent(self, event):
+        key = event.key()
+        if key == Qt.Key_Space:
+            self.toggle_play_pause()
+        elif key in (Qt.Key_Right, Qt.Key_K, Qt.Key_F):
+            self.video_player.fast_forward(3)
+        elif key in (Qt.Key_Left, Qt.Key_J, Qt.Key_D):
+            self.video_player.fast_backward(3)
+        else:
+            super().keyPressEvent(event)
 
 
 class ClickableSlider(QSlider):

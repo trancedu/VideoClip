@@ -29,11 +29,11 @@ class VideoPlayer:
     def is_playing(self):
         return self.player.is_playing()
 
-    def fast_forward(self, second=3):
-        self.set_time(self.get_time() + second)
+    def fast_forward(self, seconds=3):
+        self.set_time(self.get_time() + seconds * 1000)
 
-    def fast_backward(self, second=3):
-        self.set_time(self.get_time() - second)
+    def fast_backward(self, seconds=3):
+        self.set_time(self.get_time() - seconds * 1000)
 
     def set_speed(self, speed):
         pass 
