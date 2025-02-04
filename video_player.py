@@ -6,6 +6,7 @@ class VideoPlayer:
         self.instance = vlc.Instance()
         self.player: vlc.MediaPlayer = self.instance.media_player_new()
         self.video_path = ""
+        self.current_clip_end = None
 
     def load_video(self, video_path):
         self.video_path = video_path

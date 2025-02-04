@@ -102,29 +102,18 @@ class ClickableSlider(QSlider):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            # Calculate the new position based on the click
             new_value = QStyle.sliderValueFromPosition(
                 self.minimum(), self.maximum(), event.x(), self.width())
             self.setValue(new_value)
-            
-            # Debugging output
-            # print(f"Clicked position: {event.x()}, New slider value: {new_value}")
-            # print(f"Slider range: {self.minimum()} - {self.maximum()}")
-            
-            # Set the new position in the video widget
             self.video_player.set_time(new_value)
-            
-            # Check if the video player is in a state to accept the new position
+            self.video_player.current_clip_end = None  # Reset clip tracking
             if not self.video_player.is_playing():
-                # print("Video is not playing, attempting to play.")
                 self.video_player.toggle_play_pause()
 
-        # Call the base class implementation
-        # super().mousePressEvent(event)
-    
     def slider_clicked(self):
         value = self.value()
         self.video_player.set_time(value)
+        self.video_player.current_clip_end = None  # Reset clip tracking
         if not self.video_player.is_playing():
             self.video_player.play()
 
@@ -135,10 +124,15 @@ class ClickableSlider(QSlider):
         if total_time > 0:
             self.setRange(0, total_time)
             self.setValue(current_time)
-            # Update tooltip or label if needed
             current_time_str = self.format_time(current_time)
             total_time_str = self.format_time(total_time)
             self.setToolTip(f"{current_time_str} / {total_time_str}")
+
+        # Add clip boundary check
+        if (self.video_player.current_clip_end is not None and 
+            current_time >= self.video_player.current_clip_end):
+            self.video_player.pause()
+            self.video_player.current_clip_end = None
 
     def format_time(self, ms):
         seconds = int(ms / 1000)
@@ -172,17 +166,15 @@ class ClipTreeWidget(QTreeWidget):
             clip_text = item.text(0)
             start, end = self.parse_clip_text(clip_text)
 
-            # Use the video_paths dictionary to find the video path
             video_path = self.clip_manager.get_video_path(video_name)
-            print(f"Video path: {video_path}")
-            # Check if the current video is the same as the new video
             if self.video_player.get_video_path() != video_path:
                 self.video_player.load_video(video_path=video_path)
                 self.video_player.play()
 
-            # Play the clip
+            # Set clip boundaries and play
             self.video_player.play(int(start * 1000))
- 
+            self.video_player.current_clip_end = int(end * 1000)
+
     def parse_clip_text(self, clip_text):
         """Parse the clip text to extract start and end times."""
         # Example clip text: "Clip: 10.00s - 20.00s"
