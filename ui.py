@@ -304,6 +304,7 @@ class ClipTreeWidget(QTreeWidget):
         self.setHeaderLabels(["Video"])
         self.populate_tree()
         self.itemClicked.connect(self.on_clip_selected)
+        self.setFocusPolicy(Qt.StrongFocus)
 
     def populate_tree(self):
         self.clear()  # Clear existing items before repopulating
@@ -339,3 +340,9 @@ class ClipTreeWidget(QTreeWidget):
         start = float(parts[0].replace("s", ""))
         end = float(parts[1].replace("s", ""))
         return start, end
+
+    def keyPressEvent(self, event):
+        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            self.on_clip_selected()
+        else:
+            super().keyPressEvent(event)
