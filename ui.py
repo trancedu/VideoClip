@@ -31,10 +31,6 @@ class MainWindow(QWidget):
         self.video_widget = ClickableVideoWidget(self.video_player, self)
         layout.addWidget(self.video_widget)
         
-        self.play_button = QPushButton("Play/Pause", self)
-        self.play_button.clicked.connect(self.video_player.toggle_play_pause)
-        layout.addWidget(self.play_button)
-        
         self.slider = ClickableSlider(self.video_player, self)
         layout.addWidget(self.slider)
         
@@ -51,6 +47,11 @@ class MainWindow(QWidget):
         self.load_button = QPushButton("Load Video")
         self.load_button.clicked.connect(self.load_video)
         control_layout.addWidget(self.load_button)
+
+        # Add Play/Pause button here
+        self.play_button = QPushButton("Play/Pause", self)
+        self.play_button.clicked.connect(self.video_player.toggle_play_pause)
+        control_layout.addWidget(self.play_button)
 
         # Clip controls
         self.clip_button = QPushButton("Start Clip")
