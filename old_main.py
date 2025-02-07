@@ -140,7 +140,7 @@ class VideoPlayerApp(QWidget):
         video_layout.addLayout(progress_layout)
 
         # Add video layout to main layout
-        main_layout.addLayout(video_layout, 7)  # 7/8 of the width
+        main_layout.addLayout(video_layout, 5)  # Changed from 7 to 5 (5/6 of width)
 
         # Control panel
         control_layout = QVBoxLayout()
@@ -244,7 +244,7 @@ class VideoPlayerApp(QWidget):
         control_layout.addWidget(self.speed_combo)
 
         # Add control layout to main layout
-        main_layout.addLayout(control_layout, 1)  # 1/8 of the width
+        main_layout.addLayout(control_layout, 1)  # Kept as 1 (1/6 of width)
 
         self.setLayout(main_layout)
 
