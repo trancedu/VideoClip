@@ -55,7 +55,7 @@ def keyPressEvent(self, event):
             previous_clip(self)
         else:
             navigate_tree(self, -1)  # Move up in the tree
-    elif key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+    elif key in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_W):
         if self.single_video_mode:
             play_favorite(self)
         else:
