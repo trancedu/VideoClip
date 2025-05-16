@@ -11,6 +11,13 @@ from PyQt6.QtCore import Qt, QTimer, QEvent
 from widgets import ClickableVideoWidget, ClickableSlider, CustomListWidget, CustomTreeWidget
 from utils import format_time, parse_clip_text, light_mode_stylesheet, dark_mode_stylesheet
 
+# Import functionality from the new modules
+import ui_components
+import clip_manager
+import playback_control
+import event_handler
+import file_operations
+
 
 class VideoPlayerApp(QWidget):
     def __init__(self, debug=False, debug_video_path=None, config_dir=None, base_video_dir=None):
@@ -36,7 +43,7 @@ class VideoPlayerApp(QWidget):
         self.init_vlc_player()
         
         # Create widgets
-        self.create_widgets()
+        ui_components.create_widgets(self)
 
         # Create a timer to update the UI
         self.init_timer()
@@ -49,12 +56,15 @@ class VideoPlayerApp(QWidget):
 
         # Load a specific video if debug flag is set
         if debug and debug_video_path:
-            self.load_video(video_path=debug_video_path)
+            file_operations.load_video(self, video_path=debug_video_path)
 
         # Install an event filter to capture key events globally
         QApplication.instance().installEventFilter(self)
 
-        self.video_paths = self.scan_for_videos(base_video_dir)
+        self.video_paths = file_operations.scan_for_videos(self, base_video_dir)
+        
+        # Apply dark mode stylesheet
+        self.setStyleSheet(dark_mode_stylesheet())
 
     def init_variables(self):
         """Initialize the variables used by the application."""
@@ -86,8 +96,53 @@ class VideoPlayerApp(QWidget):
         """Initialize the timer for updating the UI."""
         self.timer = QTimer(self)
         self.timer.setInterval(200)  # Adjust the interval as needed
-        self.timer.timeout.connect(self.update_position)
-        self.timer.timeout.connect(self.check_loop_position)
+        # Use lambda to ensure 'self' is properly passed to the functions
+        self.timer.timeout.connect(lambda: playback_control.update_position(self))
+        self.timer.timeout.connect(lambda: clip_manager.check_loop_position(self))
+    
+    # Event handling methods
+    eventFilter = event_handler.eventFilter
+    keyPressEvent = event_handler.keyPressEvent
+    
+    # UI methods delegated to the modules
+    create_widgets = ui_components.create_widgets
+    toggle_play_pause = playback_control.toggle_play_pause
+    set_position = playback_control.set_position
+    
+    # Main functions delegated to the modules
+    load_video = file_operations.load_video
+    play_video = playback_control.play_video
+    pause_video = playback_control.pause_video
+    skip = playback_control.skip
+    
+    # Clip management methods
+    start_clip = clip_manager.start_clip
+    save_clip = clip_manager.save_clip
+    play_favorite = clip_manager.play_favorite
+    delete_clip = clip_manager.delete_clip
+    toggle_loop = clip_manager.toggle_loop
+    return_to_main_video = playback_control.return_to_main_video
+    
+    # UI control methods
+    update_favorites_list = ui_components.update_favorites_list
+    toggle_video_audio_mode = ui_components.toggle_video_audio_mode
+    toggle_dark_mode = playback_control.toggle_dark_mode
+    change_speed = playback_control.change_speed
+    toggle_half_speed = playback_control.toggle_half_speed
+    slider_clicked = playback_control.slider_clicked
+    toggle_video_list = ui_components.toggle_video_list
+    toggle_expand_collapse_all = ui_components.toggle_expand_collapse_all
+    
+    # Clip tree methods
+    update_video_clips_tree = ui_components.update_video_clips_tree
+    select_clip_in_tree = ui_components.select_clip_in_tree
+    on_clip_selected = clip_manager.on_clip_selected
+    load_config_files = clip_manager.load_config_files
+    
+    # Format helpers delegated to utils
+    format_time = format_time
+    dark_mode_stylesheet = dark_mode_stylesheet
+    light_mode_stylesheet = light_mode_stylesheet
 
     def scan_for_videos(self, base_dir):
         """Scan the base directory and subdirectories for .mp4 files."""
@@ -276,13 +331,6 @@ class VideoPlayerApp(QWidget):
         self.speed_combo.currentIndexChanged.connect(self.change_speed)
         layout.addWidget(self.speed_combo)
 
-    def toggle_play_pause(self):
-        """Toggle between play and pause states."""
-        if self.is_playing:
-            self.pause_video()
-        else:
-            self.play_video()
-
     def update_position(self):
         """Update the position slider and duration label."""
         current_time = self.media_player.get_time()
@@ -319,370 +367,10 @@ class VideoPlayerApp(QWidget):
                 return True  # Event handled
         return super().eventFilter(source, event)
 
-    def load_video(self, video_path=None):
-        """Load a video file."""
-        if video_path and os.path.exists(video_path):
-            self.video_path = video_path
-        else:
-            options = QFileDialog.Options()
-            self.video_path, _ = QFileDialog.getOpenFileName(
-                self, "Open Video File", "", "Video Files (*.mp4 *.avi)")
-
-        if self.video_path and os.path.exists(self.video_path):
-            # Create VLC media and set it to the player
-            media = self.instance.media_new(self.video_path)
-            self.media_player.set_media(media)
-
-            # Update the paths for loading and saving clips
-            self.update_clip_paths()
-
-            self.play_button.setEnabled(True)
-            self.pause_button.setEnabled(True)
-            self.forward_button.setEnabled(True)
-            self.backward_button.setEnabled(True)
-            self.clip_button.setEnabled(True)
-            self.save_clip_button.setEnabled(True)
-            self.feedback_label.setText(f"Loaded video: {os.path.basename(self.video_path)}")
-
-            # Load saved clip positions
-            self.load_clips_from_file()
-
-            # Automatically play the video after loading
-            self.play_video()
-
-            # Set focus to the main window to prevent spacebar from triggering the button again
-            self.setFocus()
-        else:
-            self.feedback_label.setText("Video file not found.")
-
     def update_clip_paths(self):
         """Update the paths for loading and saving clips."""
         os.makedirs(self.config_dir, exist_ok=True)
         self.config_file = os.path.join(self.config_dir, f"{os.path.basename(self.video_path)}.json")
-
-    def play_video(self):
-        """Play the current video."""
-        if self.video_path:
-            try:
-                if not self.media_player.get_media():
-                    media = self.instance.media_new(self.video_path)
-                    self.media_player.set_media(media)
-                self.media_player.play()
-                self.is_playing = True
-                self.timer.start()
-                self.feedback_label.setText("Playing video")
-            except Exception as e:
-                self.feedback_label.setText(f"Error playing video: {e}")
-
-    def pause_video(self):
-        """Pause the current video."""
-        if self.is_playing:
-            self.media_player.pause()
-            self.is_playing = False
-            self.feedback_label.setText("Video paused")
-
-    def skip(self, seconds):
-        """Skip forward or backward by the specified number of seconds."""
-        if self.media_player.get_length() > 0:
-            current_time = self.media_player.get_time()
-            new_time = current_time + seconds * 1000  # milliseconds
-            new_time = max(0, min(new_time, self.media_player.get_length()))
-            self.media_player.set_time(int(new_time))
-            direction = "forward" if seconds > 0 else "backward"
-            self.feedback_label.setText(f"Skipped {direction} {abs(seconds)} seconds")
-
-    def start_clip(self):
-        """Set the start point for a clip."""
-        if self.media_player.get_length() > 0:
-            self.current_clip_start = max(0, self.media_player.get_time() / 1000.0 - 0.5) # seconds
-            self.feedback_label.setText("Clip start point set.")
-
-    def save_clip(self):
-        """Save the current clip."""
-        if self.current_clip_start is not None:
-            self.current_clip_end = self.media_player.get_time() / 1000.0  # seconds
-            if self.current_clip_end > self.current_clip_start:
-                clip_data = {
-                    'positions': (self.current_clip_start, self.current_clip_end),
-                }
-                self.favorites.append(clip_data)
-
-                # Sort clips after adding a new one
-                self.sort_clips()
-
-                # Update the favorites list widget
-                self.update_favorites_list()
-
-                # Save to JSON file
-                self.save_clips_to_file()
-
-                # Find the index of the newly added clip
-                new_clip_index = self.favorites.index(clip_data)
-
-                if not self.single_video_mode:
-                    # Update the video clips tree
-                    self.update_video_clips_tree()
-
-                    # Select the newly added clip in the video clips tree
-                    self.select_clip_in_tree(new_clip_index)
-                else:
-                    # Select the newly added clip in the favorites list
-                    self.favorites_list.setCurrentRow(new_clip_index)
-
-                self.feedback_label.setText("Clip positions saved!")
-            else:
-                self.feedback_label.setText("Invalid clip duration.")
-        else:
-            self.feedback_label.setText("Set the clip start point first.")
-
-    def select_clip_in_tree(self, clip_index):
-        """Select the newly added clip in the video clips tree."""
-        video_name = os.path.basename(self.video_path)
-        for i in range(self.video_clips_tree.topLevelItemCount()):
-            video_item = self.video_clips_tree.topLevelItem(i)
-            if video_item.text(0) == video_name:
-                clip_item = video_item.child(clip_index)
-                if clip_item:
-                    self.video_clips_tree.setCurrentItem(clip_item)
-                break
-
-    def update_video_clips_tree(self):
-        """Update the video clips tree with the current clips for the loaded video."""
-        video_name = os.path.basename(self.video_path)
-        for i in range(self.video_clips_tree.topLevelItemCount()):
-            video_item = self.video_clips_tree.topLevelItem(i)
-            if video_item.text(0) == video_name:
-                # Clear existing clips
-                video_item.takeChildren()
-                # Add updated clips
-                for clip in self.favorites:
-                    start, end = clip['positions']
-                    clip_item = QTreeWidgetItem(video_item, [f"Clip: {start:.2f}s - {end:.2f}s"])
-                    video_item.addChild(clip_item)
-                break
-
-    def sort_clips(self):
-        """Sort the favorites list by start time."""
-        self.favorites.sort(key=lambda clip: clip['positions'][0])
-
-    def save_clips_to_file(self):
-        """Save clips to a JSON file."""
-        if self.video_path:
-            # Use the updated config_file path
-            clips_to_save = [{'positions': clip['positions']} for clip in self.favorites]
-
-            with open(self.config_file, 'w') as f:
-                json.dump(clips_to_save, f)
-
-            # Update the favorites list widget
-            self.update_favorites_list()
-            self.feedback_label.setText("Clip positions saved to file.")
-
-    def load_clips_from_file(self):
-        """Load clips from a JSON file."""
-        if self.video_path:
-            self.favorites = []
-            if os.path.exists(self.config_file):
-                with open(self.config_file, 'r') as f:
-                    loaded_clips = json.load(f)
-
-                if isinstance(loaded_clips, list) and all(isinstance(clip, dict) for clip in loaded_clips):
-                    self.favorites = loaded_clips
-
-                self.feedback_label.setText("Clip positions loaded from file.")
-            else:
-                self.feedback_label.setText("No saved clip positions found.")
-            
-            # Sort clips after loading
-            self.sort_clips()
-
-            # Update the favorites list widget
-            self.update_favorites_list()
-
-    def play_favorite(self):
-        """Play the selected favorite clip."""
-        selected_row = self.favorites_list.currentRow()
-        if selected_row >= 0:
-            clip_data = self.favorites[selected_row]
-            # Save the current position of the main video only if not already saved
-            if not self.position_saved:
-                self.main_video_position = self.media_player.get_time()
-                self.position_saved = True
-
-            # Extract start and end positions from the clip data
-            start, end = clip_data['positions']
-
-            # Call play_clip with the start and end positions
-            self.play_clip(start, end)
-
-            self.return_button.setEnabled(True)
-        else:
-            self.feedback_label.setText("No clip selected.")
-
-    def check_loop_position(self):
-        """Check if the current position is at the end of the clip and loop if needed."""
-        current_position = self.media_player.get_time()
-        if self.current_clip_end is not None:  # Ensure current_clip_end is set
-            if current_position >= int(self.current_clip_end * 1000):  # Convert to milliseconds
-                if self.loop_enabled:
-                    # Apply an additional 200ms buffer when looping
-                    adjusted_start = max(0, self.current_clip_start * 1000 - 100)
-                    self.media_player.set_time(int(adjusted_start))
-                    self.media_player.play()
-                else:
-                    self.media_player.pause()
-                    self.is_playing = False  # Update the is_playing flag
-                    self.feedback_label.setText("Clip playback finished.")
-                    self.current_clip_end = None
-
-    def return_to_main_video(self):
-        """Return to the main video from a clip."""
-        if self.video_path:
-            # Ensure media is loaded
-            if not self.media_player.get_media():
-                media = self.instance.media_new(self.video_path)
-                self.media_player.set_media(media)
-            self.media_player.set_time(self.main_video_position)  # Resume from last position
-            self.media_player.play()
-            self.is_playing = True
-            self.return_button.setEnabled(False)
-            self.position_saved = False  # Reset the flag
-            self.feedback_label.setText("Returned to main video")
-
-    def delete_clip(self):
-        """Delete the selected clip."""
-        if self.single_video_mode:
-            # Get the selected row from the favorites list
-            selected_row = self.favorites_list.currentRow()
-            if selected_row >= 0:
-                del self.favorites[selected_row]
-                self.favorites_list.takeItem(selected_row)
-                self.save_clips_to_file()
-                self.update_favorites_list()  # Update the favorites list widget
-                self.feedback_label.setText(f"Deleted clip {selected_row + 1}")
-                if self.favorites_list.count() > 0:
-                    self.favorites_list.setCurrentRow(max(selected_row - 1, 0))
-            else:
-                self.feedback_label.setText("No clip selected to delete.")
-        else:
-            # Get the selected item from the video clips tree
-            current_item = self.video_clips_tree.currentItem()
-            if current_item and current_item.parent():  # Ensure it's a clip, not a video
-                parent_item = current_item.parent()
-                clip_index = parent_item.indexOfChild(current_item)
-                del self.favorites[clip_index]
-                parent_item.takeChild(clip_index)
-                self.save_clips_to_file()
-                self.update_video_clips_tree()  # Update the video clips tree
-                self.feedback_label.setText(f"Deleted clip {clip_index + 1}")
-                if parent_item.childCount() > 0:
-                    self.video_clips_tree.setCurrentItem(parent_item.child(max(clip_index - 1, 0)))
-            else:
-                self.feedback_label.setText("No clip selected to delete.")
-
-    def toggle_loop(self):
-        """Toggle looping for clips."""
-        self.loop_enabled = not self.loop_enabled
-        status = "enabled" if self.loop_enabled else "disabled"
-        self.feedback_label.setText(f"Looping {status}")
-
-    def next_clip(self):
-        """Go to the next clip in the favorites list."""
-        current_row = self.favorites_list.currentRow()
-        next_row = 0
-        if current_row < self.favorites_list.count() - 1:
-            next_row = current_row + 1
-        self.favorites_list.setCurrentRow(next_row)
-        self.play_favorite()
- 
-    def previous_clip(self):
-        """Go to the previous clip in the favorites list."""
-        current_row = self.favorites_list.currentRow()
-        prev_row = self.favorites_list.count() - 1
-        if current_row > 0:
-            prev_row = current_row - 1
-        self.favorites_list.setCurrentRow(prev_row)
-        self.play_favorite()
-
-    def keyPressEvent(self, event):
-        """Handle key press events."""
-        key = event.key()
-        
-        if key in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
-            self.delete_clip()
-        elif key == Qt.Key.Key_Right:
-            self.skip(3)  # Fine-tuned seeking
-        elif key == Qt.Key.Key_Left:
-            self.skip(-3)  # Fine-tuned seeking
-        elif key == Qt.Key.Key_Space:
-            if self.is_playing:
-                self.pause_video()
-            else:
-                self.play_video()
-        elif key == Qt.Key.Key_S:
-            self.start_clip()
-        elif key == Qt.Key.Key_E:
-            self.save_clip()
-        elif key == Qt.Key.Key_L:
-            self.toggle_loop()
-        elif key in (Qt.Key.Key_N, Qt.Key.Key_Down):
-            if self.single_video_mode:
-                self.next_clip()
-            else:
-                self.navigate_tree(1)  # Move down in the tree
-        elif key in (Qt.Key.Key_P, Qt.Key.Key_Up):
-            if self.single_video_mode:
-                self.previous_clip()
-            else:
-                self.navigate_tree(-1)  # Move up in the tree
-        elif key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            if self.single_video_mode:
-                self.play_favorite()
-            else:
-                current_item = self.video_clips_tree.currentItem()
-                if current_item and not current_item.parent():  # Check if it's a top-level item (video)
-                    if current_item.isExpanded():
-                        self.video_clips_tree.collapseItem(current_item)
-                    else:
-                        self.video_clips_tree.expandItem(current_item)
-                else:
-                    self.play_selected_clip()  # Play the selected clip if it's not a video
-        elif key == Qt.Key.Key_A:
-            self.toggle_video_audio_mode()  # Toggle video/audio mode with 'A' key
-        elif key == Qt.Key.Key_Q:
-            self.toggle_half_speed()  # Toggle half speed with 'Q' key
-
-    def navigate_tree(self, direction):
-        """Navigate the video clips tree."""
-        current_item = self.video_clips_tree.currentItem()
-        if current_item:
-            if direction > 0:  # Move down
-                next_item = self.video_clips_tree.itemBelow(current_item)
-            else:  # Move up
-                next_item = self.video_clips_tree.itemAbove(current_item)
-
-            if next_item:
-                self.video_clips_tree.setCurrentItem(next_item)
-                self.play_selected_clip()  # Play the clip after navigating
-
-    def play_selected_clip(self):
-        """Play the currently selected clip in the tree."""
-        current_item = self.video_clips_tree.currentItem()
-        if current_item and current_item.parent():  # Ensure it's a clip, not a video
-            self.on_clip_selected(current_item, 0)
-
-    def slider_clicked(self):
-        """Handle slider click events."""
-        # Reset the current clip end when the slider is clicked
-        self.current_clip_end = None
-
-        # Calculate the position based on the click
-        value = self.position_slider.value()
-        self.set_position(value)
-
-        # If the video is paused, start playing from the new position
-        if not self.is_playing:
-            self.play_video()
 
     def update_favorites_list(self):
         """Update the favorites list widget with the current clips."""

@@ -24,7 +24,7 @@ class ClickableSlider(QSlider):
         if event.button() == Qt.MouseButton.LeftButton:
             # Calculate the new position based on the click
             new_value = QStyle.sliderValueFromPosition(
-                self.minimum(), self.maximum(), event.position().x(), self.width())
+                self.minimum(), self.maximum(), int(event.position().x()), self.width())
             self.setValue(new_value)
             self.parent().set_position(new_value)
         super().mousePressEvent(event)
