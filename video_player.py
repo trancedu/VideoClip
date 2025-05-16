@@ -2,12 +2,12 @@ import os
 import sys
 import json
 import vlc
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QFileDialog, 
     QLabel, QHBoxLayout, QToolTip, QComboBox, 
     QTreeWidgetItem, QApplication, QStyle
 )
-from PyQt5.QtCore import Qt, QTimer, QEvent
+from PyQt6.QtCore import Qt, QTimer, QEvent
 from widgets import ClickableVideoWidget, ClickableSlider, CustomListWidget, CustomTreeWidget
 from utils import format_time, parse_clip_text, light_mode_stylesheet, dark_mode_stylesheet
 
@@ -27,7 +27,7 @@ class VideoPlayerApp(QWidget):
         else:
             self.resize(1800, 1200)  # Set window size to 1800x1200
 
-        self.setFocusPolicy(Qt.StrongFocus)  # Ensure the window can capture key events
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)  # Ensure the window can capture key events
 
         # Initialize variables
         self.init_variables()
@@ -128,11 +128,11 @@ class VideoPlayerApp(QWidget):
         
         # Set the video output to the video widget
         if sys.platform == "win32":  # for Windows
-            self.media_player.set_hwnd(self.video_widget.winId())
+            self.media_player.set_hwnd(int(self.video_widget.winId()))
         elif sys.platform == "darwin":  # for MacOS
             self.media_player.set_nsobject(int(self.video_widget.winId()))
         elif sys.platform.startswith('linux'):  # for Linux using the X Server
-            self.media_player.set_xwindow(self.video_widget.winId())
+            self.media_player.set_xwindow(int(self.video_widget.winId()))
 
         video_layout.addWidget(self.video_widget, stretch=1)  # Allow video to expand
 
@@ -140,7 +140,7 @@ class VideoPlayerApp(QWidget):
         progress_layout = QHBoxLayout()
 
         # Progress bar
-        self.position_slider = ClickableSlider(Qt.Horizontal)
+        self.position_slider = ClickableSlider(Qt.Orientation.Horizontal)
         self.position_slider.setRange(0, 0)
         self.position_slider.sliderMoved.connect(self.set_position)
         self.position_slider.sliderPressed.connect(self.slider_clicked)
@@ -303,18 +303,18 @@ class VideoPlayerApp(QWidget):
 
     def eventFilter(self, source, event):
         """Handle events for the application."""
-        if source is self.position_slider and event.type() == event.MouseMove:
-            pos = event.pos().x()
+        if source is self.position_slider and event.type() == QEvent.Type.MouseMove:
+            pos = event.position().x()
             value = self.position_slider.minimum() + (self.position_slider.maximum() - self.position_slider.minimum()) * pos / self.position_slider.width()
             tooltip_time = format_time(int(value))
-            QToolTip.showText(event.globalPos(), tooltip_time, self.position_slider)
+            QToolTip.showText(event.globalPosition().toPoint(), tooltip_time, self.position_slider)
         # Check if the event is a key press event
-        elif event.type() == QEvent.KeyPress:
+        elif event.type() == QEvent.Type.KeyPress:
             # Handle left and right arrow keys globally
-            if event.key() in [Qt.Key_Right, Qt.Key_K, Qt.Key_F]:
+            if event.key() in [Qt.Key.Key_Right, Qt.Key.Key_K, Qt.Key.Key_F]:
                 self.skip(3)  # Fine-tuned seeking
                 return True  # Event handled
-            elif event.key() in [Qt.Key_Left, Qt.Key_J, Qt.Key_D]:
+            elif event.key() in [Qt.Key.Key_Left, Qt.Key.Key_J, Qt.Key.Key_D]:
                 self.skip(-3)  # Fine-tuned seeking
                 return True  # Event handled
         return super().eventFilter(source, event)
@@ -325,9 +325,8 @@ class VideoPlayerApp(QWidget):
             self.video_path = video_path
         else:
             options = QFileDialog.Options()
-            options |= QFileDialog.ReadOnly
             self.video_path, _ = QFileDialog.getOpenFileName(
-                self, "Open Video File", "", "Video Files (*.mp4 *.avi)", options=options)
+                self, "Open Video File", "", "Video Files (*.mp4 *.avi)")
 
         if self.video_path and os.path.exists(self.video_path):
             # Create VLC media and set it to the player
@@ -609,34 +608,34 @@ class VideoPlayerApp(QWidget):
         """Handle key press events."""
         key = event.key()
         
-        if key in (Qt.Key_Delete, Qt.Key_Backspace):
+        if key in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
             self.delete_clip()
-        elif key == Qt.Key_Right:
+        elif key == Qt.Key.Key_Right:
             self.skip(3)  # Fine-tuned seeking
-        elif key == Qt.Key_Left:
+        elif key == Qt.Key.Key_Left:
             self.skip(-3)  # Fine-tuned seeking
-        elif key == Qt.Key_Space:
+        elif key == Qt.Key.Key_Space:
             if self.is_playing:
                 self.pause_video()
             else:
                 self.play_video()
-        elif key == Qt.Key_S:
+        elif key == Qt.Key.Key_S:
             self.start_clip()
-        elif key == Qt.Key_E:
+        elif key == Qt.Key.Key_E:
             self.save_clip()
-        elif key == Qt.Key_L:
+        elif key == Qt.Key.Key_L:
             self.toggle_loop()
-        elif key in (Qt.Key_N, Qt.Key_Down):
+        elif key in (Qt.Key.Key_N, Qt.Key.Key_Down):
             if self.single_video_mode:
                 self.next_clip()
             else:
                 self.navigate_tree(1)  # Move down in the tree
-        elif key in (Qt.Key_P, Qt.Key_Up):
+        elif key in (Qt.Key.Key_P, Qt.Key.Key_Up):
             if self.single_video_mode:
                 self.previous_clip()
             else:
                 self.navigate_tree(-1)  # Move up in the tree
-        elif key in (Qt.Key_Return, Qt.Key_Enter):
+        elif key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             if self.single_video_mode:
                 self.play_favorite()
             else:
@@ -648,9 +647,9 @@ class VideoPlayerApp(QWidget):
                         self.video_clips_tree.expandItem(current_item)
                 else:
                     self.play_selected_clip()  # Play the selected clip if it's not a video
-        elif key == Qt.Key_A:
+        elif key == Qt.Key.Key_A:
             self.toggle_video_audio_mode()  # Toggle video/audio mode with 'A' key
-        elif key == Qt.Key_Q:
+        elif key == Qt.Key.Key_Q:
             self.toggle_half_speed()  # Toggle half speed with 'Q' key
 
     def navigate_tree(self, direction):

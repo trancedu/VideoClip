@@ -2,7 +2,7 @@ import sys
 import os
 import platform
 from video_player import VideoPlayerApp
-from PyQt5.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication
 
 if __name__ == "__main__":
     debug_mode = True  # Set this to True to enable debug mode
@@ -28,4 +28,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = VideoPlayerApp(debug=debug_mode, debug_video_path=debug_video_path, config_dir=config_dir, base_video_dir=base_video_dir)
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
