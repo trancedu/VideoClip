@@ -593,7 +593,7 @@ class VideoPlayerApp(QWidget):
                 self.previous_clip()
             else:
                 self.navigate_tree(-1)  # Move up in the tree
-        elif key in (Qt.Key_Return, Qt.Key_Enter):
+        elif key in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_W):
             if self.single_video_mode:
                 self.play_favorite()
             else:
