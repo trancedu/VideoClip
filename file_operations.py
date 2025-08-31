@@ -8,7 +8,7 @@ def load_video(self, video_path=None):
     if video_path and os.path.exists(video_path):
         self.video_path = video_path
     else:
-        options = QFileDialog.Options()
+        # In PyQt6, we don't need to create Options object
         self.video_path, _ = QFileDialog.getOpenFileName(
             self, "Open Video File", "", "Video Files (*.mp4 *.avi)")
 
