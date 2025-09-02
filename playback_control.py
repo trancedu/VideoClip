@@ -124,9 +124,9 @@ def change_speed(self):
 
 
 def toggle_half_speed(self):
-    """Toggle between half speed and normal speed."""
-    if self.playback_speed != 0.5:
-        self.playback_speed = 0.5
+    """Toggle between 0.75x speed and normal speed."""
+    if self.playback_speed != 0.75:
+        self.playback_speed = 0.75
     else:
         self.playback_speed = 1.0
     self.media_player.set_rate(self.playback_speed)
